@@ -1,0 +1,6 @@
+name: football_web_scraper_2023
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+

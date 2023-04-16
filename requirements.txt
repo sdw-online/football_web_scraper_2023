@@ -1,0 +1,6 @@
+pandas
+python-dotenv
+boto3
+selenium
+webdriver-manager
+coloredlogs
