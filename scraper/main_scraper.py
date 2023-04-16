@@ -13,18 +13,19 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
+from abc import ABC, abstractmethod
 
 # ================================================ LOGGER ================================================
 
-
 # Set up root root_logger 
-root_logger     =   logging.getLogger(__name__)
-root_logger.setLevel(logging.DEBUG)
+class Logger:
+    def __init__(self, logger_name=__name__):
+        self.logger = logging.getLogger(logger_name)
+        self.logger.setLevel(logging.DEBUG)
 
-
-# Set up formatter for logs 
-file_handler_log_formatter      =   logging.Formatter('%(asctime)s  |  %(levelname)s  |  %(message)s  ')
-console_handler_log_formatter   =   coloredlogs.ColoredFormatter(fmt    =   '%(message)s', level_styles=dict(
+        # Set up formatter for logs
+        self.file_handler_formatter = logging.Formatter('%(asctime)s  |  %(levelname)s  |  %(message)s  ')
+        self.console_handler_log_formatter =  coloredlogs.ColoredFormatter(fmt    =   '%(message)s', level_styles=dict(
                                                                                                 debug           =   dict    (color  =   'white'),
                                                                                                 info            =   dict    (color  =   'green'),
                                                                                                 warning         =   dict    (color  =   'cyan'),
@@ -36,26 +37,53 @@ console_handler_log_formatter   =   coloredlogs.ColoredFormatter(fmt    =   '%(m
                                                                                         messages            =   dict    (color  =   'white')
                                                                                     )
                                                                                     )
+        # Set up file handler object for logging events to file
+        self.file_handler = logging.FileHandler('logs/scraper/' + Path(__file__).stem + '.log', mode='w')
+        self.file_handler.setFormatter(self.file_handler_formatter)
+        
+        # Set up console handler object for writing event logs to console in real time (i.e. streams events to stderr)
+        self.console_handler = logging.StreamHandler()
 
 
-# Set up file handler object for logging events to file
-current_filepath    =   Path(__file__).stem
-file_handler        =   logging.FileHandler('logs/scraper/' + current_filepath + '.log', mode='w')
-file_handler.setFormatter(file_handler_log_formatter)
+    @abstractmethod
+    def write_to_file():
+        pass
+
+    @abstractmethod
+    def print_to_console():
+        pass
 
 
-# Set up console handler object for writing event logs to console in real time (i.e. streams events to stderr)
-console_handler     =   logging.StreamHandler()
-console_handler.setFormatter(console_handler_log_formatter)
+class ColouredLogger(Logger):
+    def __init__(self, logger_name=__name__):
+        super().__init__(logger_name)
+        self.console_handler.setFormatter(self.console_handler_log_formatter)
+        self.logger.addHandler(self.file_handler)
+        self.logger.addHandler(self.console_handler)
+    
+    def write_to_file(self, log_message):
+        self.logger.critical(log_message)
+
+    def print_to_console(self, log_message):
+        self.logger.warning(log_message)
 
 
-# Add the file handler 
-root_logger.addHandler(file_handler)
+
+class NonColouredLogger(Logger):
+    def __init__(self, logger_name=__name__):
+        super().__init__(logger_name)
+        self.console_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
+        self.logger.addHandler(self.file_handler)
+        self.logger.addHandler(self.console_handler)
 
 
-# Only add the console handler if the script is running directly from this location 
-if __name__=="__main__":
-    root_logger.addHandler(console_handler)
+    def write_to_file(self, log_message):
+        self.logger.debug(log_message)
+
+    def print_to_console(self, log_message):
+        self.logger.info(log_message)
+
+
 
 
 
@@ -64,28 +92,31 @@ if __name__=="__main__":
 
 # ================================================ CONFIG ================================================
 
-# Load environment variables to session
-load_dotenv()
-
-
-# Add a flag for saving CSV files to the cloud 
-WRITE_TO_CLOUD = False
-
 
 
 # Set up environment variables
+class ConfigInterface:
+    def __init__(self):
+        self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
+        self._AWS_SECRET_KEY             =   os.getenv("SECRET_ACCESS_KEY")
+        self._S3_REGION                  =   os.getenv("REGION_NAME")
+        self._S3_BUCKET                  =   os.getenv("S3_BUCKET")
+        self._S3_FOLDER                  =   os.getenv("S3_FOLDER")
 
-## AWS 
-
-ACCESS_KEY                          =   os.getenv("ACCESS_KEY")
-SECRET_ACCESS_KEY                   =   os.getenv("SECRET_ACCESS_KEY")
-REGION_NAME                         =   os.getenv("REGION_NAME")
-S3_BUCKET                           =   os.getenv("S3_BUCKET")
-S3_FOLDER                           =   os.getenv("S3_FOLDER")
+        # Set up constants for S3 file to be imported
+        self.s3_client                  =   boto3.client('s3', aws_access_key_id=self._AWS_ACCESS_KEY, aws_secret_access_key=self._AWS_SECRET_KEY, region_name=self._S3_REGION)
+        
+        # Add a flag for saving CSV files to the cloud 
+        self.WRITE_TO_CLOUD = False
 
 
-# Set up constants for S3 file to be imported
-s3_client                                           =       boto3.client('s3', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_ACCESS_KEY, region_name=REGION_NAME)
+
+
+
+
+
+# Load environment variables to session
+load_dotenv()
 
 
 
@@ -97,16 +128,60 @@ match_dates                     =   ['2023-Apr-16']
 table_counter                   =   0
 
 
+
 # Set up the Selenium Chrome driver 
-options = webdriver.ChromeOptions()
-options.add_argument("--headless")
-
-service = Service(executable_path=ChromeDriverManager().install())
-chrome_driver = webdriver.Chrome(service=service, options=options)
 
 
-# Assert the browsert is successfully running in a headless browser 
-assert "--headless" in options.arguments, "WARNING: The Chrome driver is not rendering the script in a headless browser..."
+class Scraper(ABC):
+    def __init__(self, options: webdriver.ChromeOptions(), service: Service(executable_path=ChromeDriverManager().install()) ):
+        self.options = options
+        self.service = service
+        self.chrome_driver = webdriver.Chrome(service=self.service, options=self.options)
+
+    @abstractmethod
+    def load_page(self, url: str):
+        pass
+
+    @abstractmethod
+    def close_popup(self):
+        pass
+
+
+    @abstractmethod
+    def scrape_data(self):
+        pass
+
+class PremierLeagueScraper(Scraper):
+    def __init__(self):
+        super().__init__()
+    
+    def load_page(self, url: str):
+        self.chrome_driver.get(url)
+
+    
+    def close_popup(self):
+        try:
+            wait = WebDriverWait(self.chrome_driver, 5)
+            close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
+            close_popup_box.click()
+            ColouredLogger.print_to_console(f'>>>>   Closing cookie pop-up window ...')
+        except Exception as e:
+            ColouredLogger.print_to_console(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+
+    
+    def scrape_data(self):
+        table = self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
+        table_rows = table.find_elements(By.XPATH, './/tr')
+        scraped_content = []
+
+        for table_row in table_rows:
+            cells = table_row.find_elements(By.TAG_NAME, 'td')
+            row_data = [cell.text for cell in cells]
+            scraped_content.append(row_data)
+
+        ColouredLogger.print_to_console(f'>>>>   Extracting content from HTML elements ...')
+        return scraped_content
+
 
 
 
