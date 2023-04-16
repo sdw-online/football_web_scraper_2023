@@ -90,7 +90,7 @@ s3_client                                           =       boto3.client('s3', a
 
 
 # Specify the constants for the scraper 
-local_target_path               =   os.path.abspath('scraper/temp_storage/dirty_data')
+local_target_path               =   os.path.abspath('temp_storage/dirty_data')
 match_dates                     =   ['2023-Apr-16']
 # match_dates                     =   ['2022-Sep-01', '2022-Oct-01', '2022-Nov-01', '2022-Dec-01', '2023-Jan-01', '2023-Feb-01', '2023-Mar-01', '2023-Mar-07', '2023-Mar-08', '2023-Mar-12']
 # match_dates                     =   ['2022-Sep-01', '2023-Mar-07']
