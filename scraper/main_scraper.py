@@ -95,7 +95,7 @@ class NonColouredLogger(Logger):
 
 
 # Set up environment variables
-class ConfigInterface:
+class Config:
     def __init__(self):
         self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
         self._AWS_SECRET_KEY             =   os.getenv("SECRET_ACCESS_KEY")
@@ -115,17 +115,7 @@ class ConfigInterface:
 
 
 
-# Load environment variables to session
-load_dotenv()
 
-
-
-# Specify the constants for the scraper 
-local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-match_dates                     =   ['2023-Apr-16']
-# match_dates                     =   ['2022-Sep-01', '2022-Oct-01', '2022-Nov-01', '2022-Dec-01', '2023-Jan-01', '2023-Feb-01', '2023-Mar-01', '2023-Mar-07', '2023-Mar-08', '2023-Mar-12']
-# match_dates                     =   ['2022-Sep-01', '2023-Mar-07']
-table_counter                   =   0
 
 
 
@@ -183,9 +173,55 @@ class PremierLeagueScraper(Scraper):
         return scraped_content
 
 
+class FileUploader(ABC):
+
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+    
+
+class S3FileUploader(FileUploader):
+    def __init__(self, bucket: str, s3_client: str, folder: str):
+        self.bucket = bucket
+        self.s3_client = s3_client
+        self.folder = folder
+    
+
+    def upload_file(self, file_name: str, file_content: str):
+        key = f"{self.folder}/{file_name}"
+        self.s3_client.put_object(Bucket=self.bucket, Key=key, Body=file_content)
+
+        
+
+class LocalFileUploader(FileUploader):
+    def __init__(self, target_path: str, folder: str):
+        self.target_path = target_path
+        self.folder = folder
+    
+    def upload_file(self, file_name: str, file_content: str):
+        with open(f'{self.target_path}/{self.folder}/{file_name}', "w") as file:
+            file.write(file_content)
+
+
+WRITE_TO_CLOUD = False
 
 
 
+if __name__=="__main__":
+
+# Load environment variables to session
+load_dotenv()
+
+
+
+# Specify the constants for the scraper 
+local_target_path               =   os.path.abspath('temp_storage/dirty_data')
+match_dates                     =   ['2023-Apr-16']
+# match_dates                     =   ['2022-Sep-01', '2022-Oct-01', '2022-Nov-01', '2022-Dec-01', '2023-Jan-01', '2023-Feb-01', '2023-Mar-01', '2023-Mar-07', '2023-Mar-08', '2023-Mar-12']
+# match_dates                     =   ['2022-Sep-01', '2023-Mar-07']
+table_counter                   =   0
+   
 
 
 
