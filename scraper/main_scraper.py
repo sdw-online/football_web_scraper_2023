@@ -117,7 +117,7 @@ class ConsoleLogger(ILogger):
 
 # Set up environment variables
 class Config:
-    def __init__(self):
+    def __init__(self, WRITE_FILES_TO_CLOUD: bool = False):
         self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
         self._AWS_SECRET_KEY             =   os.getenv("SECRET_ACCESS_KEY")
         self._S3_REGION                  =   os.getenv("REGION_NAME")
@@ -125,10 +125,10 @@ class Config:
         self._S3_FOLDER                  =   os.getenv("S3_FOLDER")
 
         # Set up constants for S3 file to be imported
-        self.s3_client                  =   boto3.client('s3', aws_access_key_id=self._AWS_ACCESS_KEY, aws_secret_access_key=self._AWS_SECRET_KEY, region_name=self._S3_REGION)
+        self.S3_CLIENT                  =   boto3.client('s3', aws_access_key_id=self._AWS_ACCESS_KEY, aws_secret_access_key=self._AWS_SECRET_KEY, region_name=self._S3_REGION)
         
         # Add a flag for saving CSV files to the cloud 
-        self.WRITE_TO_CLOUD = False
+        self.WRITE_FILES_TO_CLOUD = WRITE_FILES_TO_CLOUD
 
 
 
@@ -263,15 +263,19 @@ class FileUploader(ABC):
     
 
 class S3FileUploader(FileUploader):
-    def __init__(self, bucket: str, s3_client: str, folder: str):
-        self.bucket = bucket
+    cfg = Config()
+
+
+    def __init__(self, s3_client: str = cfg.S3_CLIENT, s3_bucket: str = cfg._S3_BUCKET, s3_folder: str = cfg._S3_FOLDER, s3_region: str = cfg._S3_REGION):
         self.s3_client = s3_client
-        self.folder = folder
+        self.bucket = s3_bucket
+        self.s3_folder = s3_folder
+        self.s3_region = s3_region
     
 
     def upload_file(self, file_name: str, file_content: str):
-        key = f"{self.folder}/{file_name}"
-        self.s3_client.put_object(Bucket=self.bucket, Key=key, Body=file_content)
+        key = f"{self.s3_folder}/{file_name}"
+        self.s3_client.put_object(Bucket=self.s3_bucket, Key=key, Body=file_content)
 
         
 
@@ -285,7 +289,6 @@ class LocalFileUploader(FileUploader):
             file.write(file_content)
 
 
-WRITE_TO_CLOUD = False
 
 
 
@@ -307,7 +310,7 @@ table_counter                   =   0
 
 
 
-if WRITE_TO_CLOUD:
+if WRITE_FILES_TO_CLOUD:
     uploader = S3FileUploader(S3_BUCKET, s3_client, S3_FOLDER)
 else:
     uploader = LocalFileUploader(local_target_path, LOCAL_FOLDER)
