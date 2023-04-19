@@ -215,10 +215,10 @@ class TableStandingsDataExtractor(IDataExtractor):
 
         return table_df
 
-    
 
 
-class Scraper(ABC):
+
+class IScraper(ABC):
     def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: IDataExtractor):
         self.webpage_loader = webpage_loader
         self.popup_handler = popup_handler
@@ -231,7 +231,7 @@ class Scraper(ABC):
 
 
 
-class PremierLeagueTableScraper(Scraper):
+class PremierLeagueTableScraper(IScraper):
     file_logger = FileLogger()
     console_logger = ConsoleLogger()
 
@@ -250,26 +250,25 @@ class PremierLeagueTableScraper(Scraper):
         
 
 
-class BundesligaTableScraper(Scraper):
+class BundesligaTableScraper(IScraper):
     pass
 
 
-class LaLigaTableScraper(Scraper):
+class LaLigaTableScraper(IScraper):
     pass
 
 
-class SerieATableScraper(Scraper):
+class SerieATableScraper(IScraper):
     pass
 
 
-class Ligue1TableScraper(Scraper):
+class Ligue1TableScraper(IScraper):
     pass
 
 
 
 
 # ================================================ DATA CONVERTER ================================================
-
 
 
 # class IDataWriter:
@@ -291,12 +290,6 @@ class Ligue1TableScraper(Scraper):
 
 #     if cfg.WRITE_FILES_TO_CLOUD:
         
-
-
-
-
-
-
 
 
 # ================================================ UPLOADER ================================================
