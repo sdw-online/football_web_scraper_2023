@@ -18,70 +18,52 @@ from abc import ABC, abstractmethod
 # ================================================ LOGGER ================================================
 
 # Set up root root_logger 
-class Logger:
-    def __init__(self, logger_name=__name__):
-        self.logger = logging.getLogger(logger_name)
-        self.logger.setLevel(logging.DEBUG)
-
-        # Set up formatter for logs
-        self.file_handler_formatter = logging.Formatter('%(asctime)s  |  %(levelname)s  |  %(message)s  ')
-        self.console_handler_log_formatter =  coloredlogs.ColoredFormatter(fmt    =   '%(message)s', level_styles=dict(
-                                                                                                debug           =   dict    (color  =   'white'),
-                                                                                                info            =   dict    (color  =   'green'),
-                                                                                                warning         =   dict    (color  =   'cyan'),
-                                                                                                error           =   dict    (color  =   'red',      bold    =   True,   bright      =   True),
-                                                                                                critical        =   dict    (color  =   'black',    bold    =   True,   background  =   'red')
-                                                                                            ),
-
-                                                                                    field_styles=dict(
-                                                                                        messages            =   dict    (color  =   'white')
-                                                                                    )
-                                                                                    )
-        # Set up file handler object for logging events to file
-        self.file_handler = logging.FileHandler('logs/scraper/' + Path(__file__).stem + '.log', mode='w')
-        self.file_handler.setFormatter(self.file_handler_formatter)
-        
-        # Set up console handler object for writing event logs to console in real time (i.e. streams events to stderr)
-        self.console_handler = logging.StreamHandler()
-
+class Logger(ABC):
 
     @abstractmethod
-    def write_to_file():
-        pass
-
-    @abstractmethod
-    def write_to_console():
+    def log_event():
         pass
 
 
-class ColouredLogger(Logger):
-    def __init__(self, logger_name=__name__):
-        super().__init__(logger_name)
-        self.console_handler.setFormatter(self.console_handler_log_formatter)
-        self.logger.addHandler(self.file_handler)
-        self.logger.addHandler(self.console_handler)
+class FileLogger(Logger):
+    def __init__(self, file_path, log_format='%(asctime)s | %(levelname)s | %(message)s'):
+        self.file_path = file_path
+        self.log_format = log_format
+  
+
+    def log_event(self, message, level=logging.DEBUG):
+        logger = logging.getLogger(__name__)
+        logger.setLevel(level)
+        file_handler = logging.FileHandler(self.file_path)
+        file_handler.setLevel(level)
+        formatter = logging.Formatter(self.log_format)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+        logger.log(level, message)
+
+
+
+
+class ConsoleHandler(Logger):
+    def __init__(self, coloured=True, log_format='%(asctime)s | %(levelname)s | %(message)s'):
+        self.coloured = coloured
+        self.log_format = log_format
     
-    def write_to_file(self, log_message):
-        self.logger.critical(log_message)
+    def log_event(self, message, level=logging.DEBUG):
+        logger = logging.getLogger(__name__)
+        console_handler = logging.StreamHandler()
+        logger.setLevel(level)
+        formatter = logging.Formatter(self.log_format)
+        console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
 
-    def write_to_console(self, log_message):
-        self.logger.warning(log_message)
-
-
-
-class NonColouredLogger(Logger):
-    def __init__(self, logger_name=__name__):
-        super().__init__(logger_name)
-        self.console_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)s | %(message)s'))
-        self.logger.addHandler(self.file_handler)
-        self.logger.addHandler(self.console_handler)
+        if self.coloured:
+            coloredlogs.install(level=level)
+        
+        logger.log(level, message)
 
 
-    def write_to_file(self, log_message):
-        self.logger.debug(log_message)
 
-    def write_to_console(self, log_message):
-        self.logger.info(log_message)
 
 
 
