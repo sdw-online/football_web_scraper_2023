@@ -249,11 +249,6 @@ class PremierLeagueTableScraper(Scraper):
 # ================================================ UPLOADER ================================================
 
 
-
-
-
-
-
 class FileUploader(ABC):
 
     @abstractmethod
@@ -264,18 +259,29 @@ class FileUploader(ABC):
 
 class S3FileUploader(FileUploader):
     cfg = Config()
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
 
 
     def __init__(self, s3_client: str = cfg.S3_CLIENT, s3_bucket: str = cfg._S3_BUCKET, s3_folder: str = cfg._S3_FOLDER, s3_region: str = cfg._S3_REGION):
         self.s3_client = s3_client
-        self.bucket = s3_bucket
+        self.s3_bucket = s3_bucket
         self.s3_folder = s3_folder
         self.s3_region = s3_region
     
 
     def upload_file(self, file_name: str, file_content: str):
-        key = f"{self.s3_folder}/{file_name}"
-        self.s3_client.put_object(Bucket=self.s3_bucket, Key=key, Body=file_content)
+        if self.cfg.WRITE_FILES_TO_CLOUD:
+            try:
+                key = f"{self.s3_folder}/{file_name}"
+                self.s3_client.put_object(Bucket=self.s3_bucket, Key=key, Body=file_content)
+            except Exception as e:
+                self.file_logger.log_event_as_warning(e)
+                self.console_logger.log_event_as_warning(e)
+        else:
+            self.file_logger.log_event_as_error(">>> Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
+            raise ImportError("Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
+            
 
         
 
