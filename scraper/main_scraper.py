@@ -192,8 +192,9 @@ class TableStandingsDataExtractor(IDataExtractor):
     console_logger = ConsoleLogger()
 
 
-    def __init__(self, chrome_driver: webdriver.Chrome):
+    def __init__(self, chrome_driver: webdriver.Chrome, match_date: str):
         self.chrome_driver = chrome_driver
+        self.match_date = match_date
     
     def scrape_data(self):
         table = self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
@@ -208,7 +209,11 @@ class TableStandingsDataExtractor(IDataExtractor):
         self.file_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
         self.console_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
 
-        return scraped_content
+        table_df = pd.DataFrame(data=scraped_content[1:], columns=[scraped_content[0]])
+        table_df['match_date'] = self.match_date
+
+
+        return table_df
 
     
 
@@ -245,54 +250,139 @@ class PremierLeagueTableScraper(Scraper):
         
 
 
+class BundesligaTableScraper(Scraper):
+    pass
+
+
+class LaLigaTableScraper(Scraper):
+    pass
+
+
+class SerieATableScraper(Scraper):
+    pass
+
+
+class Ligue1TableScraper(Scraper):
+    pass
+
+
+
+
+# ================================================ DATA CONVERTER ================================================
+
+
+
+# class IDataWriter:
+#     @abstractmethod
+#     def convert_data():
+#         pass
+
+
+
+# class TableStandingsCSVWriter(IDataWriter):
+#     cfg = Config()
+    
+#     def __init__(self, league_name: str, file_format: str, match_date: str):
+#         self.league_name = league_name
+#         self.file_format = file_format
+#         self.match_date = match_date
+#         table_standings_file = f'{self.league_name}_{self.match_date}.{self.file_format}'
+
+
+#     if cfg.WRITE_FILES_TO_CLOUD:
+        
+
+
+
+
+
+
+
 
 # ================================================ UPLOADER ================================================
 
 
 class FileUploader(ABC):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
 
     @abstractmethod
     def upload_file(self):
         pass
 
-    
+
+
+
 
 class S3FileUploader(FileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+
+class S3CSVFileUploader(S3FileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+
+
+class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
     cfg = Config()
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
+    prem_league_df = TableStandingsDataExtractor.scrape_data()
+    
 
 
     def __init__(self, s3_client: str = cfg.S3_CLIENT, s3_bucket: str = cfg._S3_BUCKET, s3_folder: str = cfg._S3_FOLDER, s3_region: str = cfg._S3_REGION):
-        self.s3_client = s3_client
-        self.s3_bucket = s3_bucket
-        self.s3_folder = s3_folder
-        self.s3_region = s3_region
-    
+        self.s3_client: str = s3_client
+        self.s3_bucket: str = s3_bucket
+        self.s3_folder: str = s3_folder
+        self.s3_region: str = s3_region
 
-    def upload_file(self, file_name: str, file_content: str):
+        self.file_name_prefix: str = 'prem_league_table'
+        self.file_format: str = 'csv'
+
+
+
+    def upload_file(self, table_standings_df: pd.DataFrame, match_date: str):
+
         if self.cfg.WRITE_FILES_TO_CLOUD:
             try:
-                key = f"{self.s3_folder}/{file_name}"
-                self.s3_client.put_object(Bucket=self.s3_bucket, Key=key, Body=file_content)
+                S3_KEY = f"{self.s3_folder}/{self.file_name_prefix}_{match_date}.{self.file_format}"
+                CSV_BUFFER = io.StringIO()
+                self.prem_league_df.to_csv(CSV_BUFFER, index=False)
+                RAW_TABLE_ROWS_AS_STRING_VALUES = CSV_BUFFER.getvalue()
+
+                self.s3_client.put_object(Bucket=self.s3_bucket, Key=S3_KEY, Body=RAW_TABLE_ROWS_AS_STRING_VALUES)
+
             except Exception as e:
                 self.file_logger.log_event_as_warning(e)
                 self.console_logger.log_event_as_warning(e)
         else:
             self.file_logger.log_event_as_error(">>> Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
             raise ImportError("Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
-            
 
-        
+
+
+class S3JSONFileUploader(S3FileUploader):
+    pass
+
+
+
 
 class LocalFileUploader(FileUploader):
+    cfg = Config()
+
     def __init__(self, target_path: str, folder: str):
         self.target_path = target_path
         self.folder = folder
-    
+
     def upload_file(self, file_name: str, file_content: str):
         with open(f'{self.target_path}/{self.folder}/{file_name}', "w") as file:
             file.write(file_content)
+            self.file_logger.log_event_as_debug(f">>> Saved successfully to {} ")
 
 
 
