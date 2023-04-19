@@ -21,46 +21,86 @@ from abc import ABC, abstractmethod
 class Logger(ABC):
 
     @abstractmethod
-    def log_event():
+    def log_event_as_debug(self, message: str):
+        pass
+
+    @abstractmethod
+    def log_event_as_info(self, message: str):
+        pass
+
+    @abstractmethod
+    def log_event_as_warning(self, message: str):
+        pass
+    
+    @abstractmethod
+    def log_event_as_critical(self, message: str):
+        pass
+    
+    @abstractmethod
+    def log_event_as_error(self, message: str):
         pass
 
 
 class FileLogger(Logger):
-    def __init__(self, file_path, log_format='%(asctime)s | %(levelname)s | %(message)s'):
-        self.file_path = file_path
-        self.log_format = log_format
-  
+    def __init__(self, file_path: str, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(level)
 
-    def log_event(self, message, level=logging.DEBUG):
-        logger = logging.getLogger(__name__)
-        logger.setLevel(level)
-        file_handler = logging.FileHandler(self.file_path)
-        file_handler.setLevel(level)
-        formatter = logging.Formatter(self.log_format)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        logger.log(level, message)
+        self.file_handler = logging.FileHandler(file_path)
+        self.file_handler.setLevel(level)
+        self.formatter = logging.Formatter(log_format)
+        self.file_handler.setFormatter(self.formatter)
 
+        self.logger.addHandler(self.file_handler)
+        
 
+    def log_event_as_debug(self, message: str):
+        self.logger.debug(message)
 
+    def log_event_as_info(self, message: str):
+        self.logger.info(message)
 
-class ConsoleHandler(Logger):
-    def __init__(self, coloured=True, log_format='%(asctime)s | %(levelname)s | %(message)s'):
-        self.coloured = coloured
-        self.log_format = log_format
+    def log_event_as_warning(self, message: str):
+        self.logger.warning(message)
+
+    def log_event_as_critical(self, message: str):
+        self.logger.critical(message)
     
-    def log_event(self, message, level=logging.DEBUG):
-        logger = logging.getLogger(__name__)
-        console_handler = logging.StreamHandler()
-        logger.setLevel(level)
-        formatter = logging.Formatter(self.log_format)
-        console_handler.setFormatter(formatter)
-        logger.addHandler(console_handler)
+    def log_event_as_error(self, message: str):
+        self.logger.error(message)
+
+
+
+class ConsoleLogger(Logger):
+    def __init__(self, coloured: bool =True, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(level)
+        self.console_handler = logging.StreamHandler()
+        self.formatter = logging.Formatter(log_format)
+        self.console_handler.setFormatter(self.formatter)
+        self.logger.addHandler(self.console_handler)
+        self.coloured = coloured
 
         if self.coloured:
             coloredlogs.install(level=level)
         
-        logger.log(level, message)
+        
+    def log_event_as_debug(self, message: str):
+        self.logger.debug(message)
+
+    def log_event_as_info(self, message: str):
+        self.logger.info(message)
+
+    def log_event_as_warning(self, message: str):
+        self.logger.warning(message)
+
+    def log_event_as_critical(self, message: str):
+        self.logger.critical(message)
+    
+    def log_event_as_error(self, message: str):
+        self.logger.error(message)
+
+     
 
 
 
