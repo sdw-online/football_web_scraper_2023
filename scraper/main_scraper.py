@@ -1,4 +1,3 @@
-
 import io
 import os
 import boto3
@@ -18,7 +17,7 @@ from abc import ABC, abstractmethod
 # ================================================ LOGGER ================================================
 
 # Set up root root_logger 
-class Logger(ABC):
+class ILogger(ABC):
 
     @abstractmethod
     def log_event_as_debug(self, message: str):
@@ -41,7 +40,7 @@ class Logger(ABC):
         pass
 
 
-class FileLogger(Logger):
+class FileLogger(ILogger):
     def __init__(self, file_path: str, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
@@ -71,7 +70,7 @@ class FileLogger(Logger):
 
 
 
-class ConsoleLogger(Logger):
+class ConsoleLogger(ILogger):
     def __init__(self, coloured: bool =True, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
@@ -84,7 +83,7 @@ class ConsoleLogger(Logger):
         if self.coloured:
             coloredlogs.install(level=level)
         
-        
+
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
 
@@ -137,6 +136,114 @@ class Config:
 
 
 
+class IWebPageLoader(ABC):
+    @abstractmethod
+    def load_page(self, url:str):
+        pass
+
+class WebPageLoader(IWebPageLoader):
+    def __init__(self, options: webdriver.ChromeOptions(), service: Service(executable_path=ChromeDriverManager().install())):
+        self.options = options
+        self.service = service
+        self.chrome_driver = webdriver.Chrome(service=self.service, options=self.options)
+
+    
+    def load_page(self, url: str):
+        self.chrome_driver.get(url)
+
+
+
+class IPopUpHandler(ABC):
+    @abstractmethod
+    def close_popup(self):
+        pass
+
+
+class PopUpHandler(IPopUpHandler):
+
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+    def __init__(self, chrome_driver: webdriver.Chrome):
+        self.chrome_driver = chrome_driver
+    
+
+    def close_popup(self):
+        try:
+            wait = WebDriverWait(self.chrome_driver, 5)
+            close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
+            close_popup_box.click()
+            self.file_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
+            self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
+        
+        except Exception as e:
+            self.file_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+            self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+
+
+class IDataExtractor(ABC):
+    @abstractmethod
+    def scrape_data(self):
+        pass
+
+class TableStandingsDataExtractor(IDataExtractor):
+
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def __init__(self, chrome_driver: webdriver.Chrome):
+        self.chrome_driver = chrome_driver
+    
+    def scrape_data(self):
+        table = self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
+        table_rows = table.find_elements(By.XPATH, './/tr')
+        scraped_content = []
+
+        for table_row in table_rows:
+            cells = table_row.find_elements(By.TAG_NAME, 'td')
+            row_data = [cell.text for cell in cells]
+            scraped_content.append(row_data)
+        
+        self.file_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
+        self.console_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
+
+        return scraped_content
+
+    
+
+
+class Scraper(ABC):
+    def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: IDataExtractor):
+        self.webpage_loader = webpage_loader
+        self.popup_handler = popup_handler
+        self.data_extractor = data_extractor
+
+    
+    @abstractmethod
+    def scrape(self):
+        pass
+
+
+
+class PremierLeagueTableScraper(Scraper):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: IDataExtractor):
+        super().__init__(webpage_loader, popup_handler, data_extractor)
+    
+    def scrape(self, url: str):
+        self.webpage_loader.load_page(url)
+        self.popup_handler.close_popup()
+        scraped_content = self.data_extractor.scrape_data()
+        self.file_logger.log_event_as_debug(">>>    Scraping Premier League table standings completed! ")
+        self.console_logger.log_event_as_debug(">>>    Scraping Premier League table standings completed! ")
+        
+        return scraped_content
+        
+
 
 
 
@@ -164,6 +271,11 @@ class Scraper(ABC):
         pass
 
 class PremierLeagueScraper(Scraper):
+
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
     def __init__(self):
         super().__init__()
     
@@ -176,9 +288,9 @@ class PremierLeagueScraper(Scraper):
             wait = WebDriverWait(self.chrome_driver, 5)
             close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
             close_popup_box.click()
-            ColouredLogger.write_to_console(f'>>>>   Closing cookie pop-up window ...')
+            self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
         except Exception as e:
-            ColouredLogger.write_to_console(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+            self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
     
     def scrape_data(self):
@@ -191,7 +303,7 @@ class PremierLeagueScraper(Scraper):
             row_data = [cell.text for cell in cells]
             scraped_content.append(row_data)
 
-        ColouredLogger.write_to_console(f'>>>>   Extracting content from HTML elements ...')
+        self.console_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
         return scraped_content
 
 
