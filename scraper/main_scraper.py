@@ -134,7 +134,7 @@ class Config:
 
 
 
-
+# ================================================ SCRAPER ================================================
 
 class IWebPageLoader(ABC):
     @abstractmethod
@@ -246,65 +246,12 @@ class PremierLeagueTableScraper(Scraper):
 
 
 
+# ================================================ UPLOADER ================================================
 
 
-# Set up the Selenium Chrome driver 
 
 
-class Scraper(ABC):
-    def __init__(self, options: webdriver.ChromeOptions(), service: Service(executable_path=ChromeDriverManager().install()) ):
-        self.options = options
-        self.service = service
-        self.chrome_driver = webdriver.Chrome(service=self.service, options=self.options)
 
-    @abstractmethod
-    def load_page(self, url: str):
-        pass
-
-    @abstractmethod
-    def close_popup(self):
-        pass
-
-
-    @abstractmethod
-    def scrape_data(self):
-        pass
-
-class PremierLeagueScraper(Scraper):
-
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
-
-
-    def __init__(self):
-        super().__init__()
-    
-    def load_page(self, url: str):
-        self.chrome_driver.get(url)
-
-    
-    def close_popup(self):
-        try:
-            wait = WebDriverWait(self.chrome_driver, 5)
-            close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
-            close_popup_box.click()
-            self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
-        except Exception as e:
-            self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
-
-    
-    def scrape_data(self):
-        table = self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
-        table_rows = table.find_elements(By.XPATH, './/tr')
-        scraped_content = []
-
-        for table_row in table_rows:
-            cells = table_row.find_elements(By.TAG_NAME, 'td')
-            row_data = [cell.text for cell in cells]
-            scraped_content.append(row_data)
-
-        self.console_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
-        return scraped_content
 
 
 class FileUploader(ABC):
