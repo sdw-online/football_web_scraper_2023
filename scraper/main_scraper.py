@@ -50,7 +50,7 @@ class Logger:
         pass
 
     @abstractmethod
-    def print_to_console():
+    def write_to_console():
         pass
 
 
@@ -64,7 +64,7 @@ class ColouredLogger(Logger):
     def write_to_file(self, log_message):
         self.logger.critical(log_message)
 
-    def print_to_console(self, log_message):
+    def write_to_console(self, log_message):
         self.logger.warning(log_message)
 
 
@@ -80,7 +80,7 @@ class NonColouredLogger(Logger):
     def write_to_file(self, log_message):
         self.logger.debug(log_message)
 
-    def print_to_console(self, log_message):
+    def write_to_console(self, log_message):
         self.logger.info(log_message)
 
 
@@ -154,9 +154,9 @@ class PremierLeagueScraper(Scraper):
             wait = WebDriverWait(self.chrome_driver, 5)
             close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
             close_popup_box.click()
-            ColouredLogger.print_to_console(f'>>>>   Closing cookie pop-up window ...')
+            ColouredLogger.write_to_console(f'>>>>   Closing cookie pop-up window ...')
         except Exception as e:
-            ColouredLogger.print_to_console(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+            ColouredLogger.write_to_console(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
     
     def scrape_data(self):
@@ -169,7 +169,7 @@ class PremierLeagueScraper(Scraper):
             row_data = [cell.text for cell in cells]
             scraped_content.append(row_data)
 
-        ColouredLogger.print_to_console(f'>>>>   Extracting content from HTML elements ...')
+        ColouredLogger.write_to_console(f'>>>>   Extracting content from HTML elements ...')
         return scraped_content
 
 
@@ -217,7 +217,7 @@ load_dotenv()
 
 # Specify the constants for the scraper 
 local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-match_dates                     =   ['2023-Apr-16']
+match_dates                     =   ['2023-Apr-17']
 # match_dates                     =   ['2022-Sep-01', '2022-Oct-01', '2022-Nov-01', '2022-Dec-01', '2023-Jan-01', '2023-Feb-01', '2023-Mar-01', '2023-Mar-07', '2023-Mar-08', '2023-Mar-12']
 # match_dates                     =   ['2022-Sep-01', '2023-Mar-07']
 table_counter                   =   0
@@ -226,90 +226,11 @@ table_counter                   =   0
 
 
 
-# Begin scraping 
-for match_date in match_dates:
-    try:
-        prem_league_table_url   =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
-        chrome_driver.get(prem_league_table_url)
-        root_logger.info(f'>>>>   Running Prem League link for league standings as of {match_date} ...')
-        root_logger.debug(f'>>>>   ')
-        try:
-            wait = WebDriverWait(chrome_driver, 5)
-            close_cookie_box    =   wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
-            close_cookie_box.click()
-            root_logger.info(f'>>>>   Closing cookie pop-up window ...')
-            root_logger.debug(f'>>>>   ')
-        except Exception as e:
-            root_logger.info(f'No cookie pop-up window to close...let\'s begin scraping for league standings as of "{match_date}"  !!')
+if WRITE_TO_CLOUD:
+    uploader = S3FileUploader(S3_BUCKET, s3_client, S3_FOLDER)
+else:
+    uploader = LocalFileUploader(local_target_path, LOCAL_FOLDER)
 
-        table                   =   chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
-        table_rows              =   table.find_elements(By.XPATH, './/tr')
-        table_row_counter       =   0
-        scraped_content         =   []
-
-
-        root_logger.info(f'>>>>   Extracting content from HTML elements ...')
-        root_logger.debug(f'>>>>   ')
-
-
-        for table_row in table_rows:
-            table_row_counter   +=  1
-            root_logger.debug(f'>>>>>>>   Table no {table_counter} <<<<<<  ')
-            root_logger.debug(f'>>>>   ')
-            cells           =   table_row.find_elements(By.TAG_NAME, 'td')
-            row_data        =   []
-            cell_counter    =   0
-            for cell in cells:
-                cell_counter += 1
-                row_data.append(cell.text)
-                root_logger.debug(f'>>>>   Table row no "{table_row_counter}", Cell no "{cell_counter}" appended ...')
-                root_logger.debug(f'>>>>   ')
-            scraped_content.append(row_data)
-
-
-        # Use HTML content to create data frame for the Premier League table standings 
-        prem_league_table_df                    =   pd.DataFrame(data=scraped_content[1:], columns=[scraped_content[0]])
-        prem_league_table_df['match_date']      =   match_date
-        prem_league_table_file                  =   f'prem_league_table_{match_date}.csv'
-        
-        S3_KEY                                       =       S3_FOLDER + prem_league_table_file
-        CSV_BUFFER                                   =       io.StringIO()
-
-
-        root_logger.debug(prem_league_table_df)
-
-        # Write data frame to CSV file
-
-
-        if WRITE_TO_CLOUD:
-            prem_league_table_df.to_csv(CSV_BUFFER, index=False)
-            RAW_TABLE_ROWS_AS_STRING_VALUES              =       CSV_BUFFER.getvalue()
-
-            # Load Postgres table to S3
-            s3_client.put_object(Bucket=S3_BUCKET,
-                        Key=S3_KEY,
-                        Body=RAW_TABLE_ROWS_AS_STRING_VALUES
-                        )
-            root_logger.info("")
-            root_logger.info(f'>>>>   Successfully written and loaded "{prem_league_table_file}" file to the "{S3_BUCKET}" S3 bucket target location...')
-            root_logger.debug(f'>>>>   ')
-
-        else:
-            prem_league_table_df.to_csv(f'{local_target_path}/{prem_league_table_file}', index=False)
-            root_logger.info("")
-            root_logger.info(f'>>>>   Successfully written and loaded "{prem_league_table_file}" file to local target location...')
-            root_logger.debug(f'>>>>   ')
-
-
-
-        # Add delays to avoid overloading the website's servers 
-        sleep(3)
-
-
-
-
-    except Exception as e:
-        root_logger.error(e)
-
-
-chrome_driver.quit()
+prem_league_table_df.to_csv(CSV_BUFFER, index=False)
+file_content = CSV_BUFFER.getvalue()
+uploader.upload(prem_league_table_file, file_content)
