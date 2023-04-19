@@ -295,7 +295,7 @@ class Ligue1TableScraper(IScraper):
 # ================================================ UPLOADER ================================================
 
 
-class FileUploader(ABC):
+class IFileUploader(ABC):
     file_logger = FileLogger()
     console_logger = ConsoleLogger()
 
@@ -307,7 +307,7 @@ class FileUploader(ABC):
 
 
 
-class S3FileUploader(FileUploader):
+class S3FileUploader(IFileUploader):
     @abstractmethod
     def upload_file(self):
         pass
@@ -345,7 +345,7 @@ class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
             try:
                 S3_KEY = f"{self.s3_folder}/{self.file_name_prefix}_{match_date}.{self.file_format}"
                 CSV_BUFFER = io.StringIO()
-                self.prem_league_df.to_csv(CSV_BUFFER, index=False)
+                table_standings_df.to_csv(CSV_BUFFER, index=False)
                 RAW_TABLE_ROWS_AS_STRING_VALUES = CSV_BUFFER.getvalue()
 
                 self.s3_client.put_object(Bucket=self.s3_bucket, Key=S3_KEY, Body=RAW_TABLE_ROWS_AS_STRING_VALUES)
@@ -365,7 +365,7 @@ class S3JSONFileUploader(S3FileUploader):
 
 
 
-class LocalFileUploader(FileUploader):
+class LocalFileUploader(IFileUploader):
     cfg = Config()
 
     def __init__(self, target_path: str, folder: str):
