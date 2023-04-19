@@ -366,16 +366,27 @@ class S3JSONFileUploader(S3FileUploader):
 
 
 class LocalFileUploader(IFileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+
+
+class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
     cfg = Config()
 
-    def __init__(self, target_path: str, folder: str):
+    def __init__(self, target_path: str):
         self.target_path = target_path
-        self.folder = folder
 
-    def upload_file(self, file_name: str, file_content: str):
-        with open(f'{self.target_path}/{self.folder}/{file_name}', "w") as file:
-            file.write(file_content)
-            self.file_logger.log_event_as_debug(f">>> Saved successfully to {} ")
+    def upload_file(self, file_name: str, prem_league_df: pd.DataFrame):
+        prem_league_table_file = f'{self.target_path}/{file_name}'
+
+        prem_league_df.to_csv(f'{prem_league_table_file}.csv', index=False)
+        self.file_logger.log_event_as_debug(f"")
+        self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{prem_league_table_file}' file to local target location... ")
+        self.file_logger.log_event_as_debug(f"")
+            
 
 
 
