@@ -270,25 +270,25 @@ class Ligue1TableScraper(IScraper):
 
 class IDataTransformer(ABC):
     @abstractmethod
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
 
 class TableStandingsDataTransformer(IDataTransformer):
     @abstractmethod
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
 
 
-class PremLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
+class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
     file_logger = FileLogger()
     console_logger = ConsoleLogger()
 
 
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         self.file_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
         self.console_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
 
@@ -298,12 +298,14 @@ class PremLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
         return table_df
 
 
+
+
 class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
     file_logger = FileLogger()
     console_logger = ConsoleLogger()
 
 
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
@@ -313,7 +315,7 @@ class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
     console_logger = ConsoleLogger()
 
 
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
@@ -323,7 +325,7 @@ class LaligaTableStandingsDataTransformer(TableStandingsDataTransformer):
     console_logger = ConsoleLogger()
 
 
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
@@ -333,7 +335,7 @@ class SerieATableStandingsDataTransformer(TableStandingsDataTransformer):
     console_logger = ConsoleLogger()
 
 
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
@@ -343,7 +345,7 @@ class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
     console_logger = ConsoleLogger()
 
 
-    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
@@ -407,7 +409,7 @@ class S3CSVFileUploader(S3FileUploader):
 
 class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
     cfg = Config()
-    prem_league_df = TableStandingsDataExtractor.scrape_data()
+    prem_league_df = PremierLeagueTableStandingsDataTransformer.transform_data()
     
 
 
