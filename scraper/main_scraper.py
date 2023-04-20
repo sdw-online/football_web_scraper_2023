@@ -15,6 +15,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from abc import ABC, abstractmethod
 
+
+
 # ================================================ LOGGER ================================================
 
 # Set up root root_logger 
@@ -302,80 +304,21 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
 
 
 class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
-
-
-    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
-
-
-
-class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
-
-
-    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
-        pass
-
 
 
 class LaligaTableStandingsDataTransformer(TableStandingsDataTransformer):
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
-
-
-    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
-
 
 
 class SerieATableStandingsDataTransformer(TableStandingsDataTransformer):
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
-
-
-    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
-
 
 
 class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
-    file_logger = FileLogger()
-    console_logger = ConsoleLogger()
-
-
-    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
-
-
-
-
-# ================================================ DATA CONVERTER ================================================
-
-
-# class IDataWriter:
-#     @abstractmethod
-#     def convert_data():
-#         pass
-
-
-
-# class TableStandingsCSVWriter(IDataWriter):
-#     cfg = Config()
-    
-#     def __init__(self, league_name: str, file_format: str, match_date: str):
-#         self.league_name = league_name
-#         self.file_format = file_format
-#         self.match_date = match_date
-#         table_standings_file = f'{self.league_name}_{self.match_date}.{self.file_format}'
-
-
-#     if cfg.WRITE_FILES_TO_CLOUD:
-        
 
 
 # ================================================ UPLOADER ================================================
@@ -388,7 +331,6 @@ class IFileUploader(ABC):
     @abstractmethod
     def upload_file(self):
         pass
-
 
 
 
@@ -481,13 +423,9 @@ class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
 if __name__=="__main__":
 
     # Specify the constants for the scraper
-    football_url   =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
- 
     local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-    match_date                     =   ['2023-Apr-20']
-    football_url   =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
-
-    table_counter                   =   0
+    match_date                      =   ['2023-Apr-20']
+    football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
 
