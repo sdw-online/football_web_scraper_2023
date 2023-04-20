@@ -234,12 +234,14 @@ class IScraper(ABC):
 class PremierLeagueTableScraper(IScraper):
     file_logger = FileLogger()
     console_logger = ConsoleLogger()
+    match_date: str = '2023-Apr-20'
 
 
     def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: IDataExtractor):
         super().__init__(webpage_loader, popup_handler, data_extractor)
+        self.match_date = match_date
     
-    def scrape(self, url: str):
+    def scrape(self, url: str = f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'):
         self.webpage_loader.load_page(url)
         self.popup_handler.close_popup()
         scraped_content = self.data_extractor.scrape_data()
@@ -292,7 +294,7 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
     console_logger = ConsoleLogger()
 
 
-    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]] = PremierLeagueTableScraper.scrape(), match_date: str = '2023-Apr-20') -> pd.DataFrame:
         self.file_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
         self.console_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
 
@@ -448,7 +450,8 @@ if __name__=="__main__":
 
     # Extract data 
     data_extractor = PremierLeagueTableScraper()
-    data_extractor.scrape()
+    prem_league_scraped_content = data_extractor.scrape(football_url)
+    
 
     # Transform data 
     data_transformer = PremierLeagueTableStandingsDataTransformer()
