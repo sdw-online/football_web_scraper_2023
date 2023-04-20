@@ -44,11 +44,11 @@ class ILogger(ABC):
 
 
 class FileLogger(ILogger):
-    def __init__(self, file_path: str, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
+    def __init__(self, local_filepath: str = Path(__file__).stem, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
 
-        self.file_handler = logging.FileHandler(file_path)
+        self.file_handler = logging.FileHandler('logs/scraper/' +  local_filepath + '.log', mode='w')
         self.file_handler.setLevel(level)
         self.formatter = logging.Formatter(log_format)
         self.file_handler.setFormatter(self.formatter)
@@ -79,9 +79,10 @@ class ConsoleLogger(ILogger):
         self.logger.setLevel(level)
         self.console_handler = logging.StreamHandler()
         self.formatter = logging.Formatter(log_format)
-        self.console_handler.setFormatter(self.formatter)
-        self.logger.addHandler(self.console_handler)
         self.coloured = coloured
+        self.console_handler.setFormatter(self.formatter)
+        if __name__=="__main__":
+            self.logger.addHandler(self.console_handler)
 
         if self.coloured:
             coloredlogs.install(level=level)
