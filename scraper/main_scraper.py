@@ -1,6 +1,7 @@
 import io
 import os
 import boto3
+import List
 import pandas as pd
 from time import sleep
 from pathlib import Path
@@ -205,15 +206,10 @@ class TableStandingsDataExtractor(IDataExtractor):
             cells = table_row.find_elements(By.TAG_NAME, 'td')
             row_data = [cell.text for cell in cells]
             scraped_content.append(row_data)
-        
-        self.file_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
-        self.console_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
 
-        table_df = pd.DataFrame(data=scraped_content[1:], columns=[scraped_content[0]])
-        table_df['match_date'] = self.match_date
+        return scraped_content
 
 
-        return table_df
 
 
 
@@ -264,6 +260,93 @@ class SerieATableScraper(IScraper):
 
 class Ligue1TableScraper(IScraper):
     pass
+
+
+
+
+
+# ================================================ DATA TRANSFORMER ================================================
+
+
+class IDataTransformer(ABC):
+    @abstractmethod
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
+
+class TableStandingsDataTransformer(IDataTransformer):
+    @abstractmethod
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
+
+
+class PremLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        self.file_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
+        self.console_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
+
+        table_df = pd.DataFrame(data=scraped_content[1:], columns=[scraped_content[0]])
+        table_df['match_date'] = match_date
+
+        return table_df
+
+
+class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
+
+class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
+
+class LaligaTableStandingsDataTransformer(TableStandingsDataTransformer):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
+
+class SerieATableStandingsDataTransformer(TableStandingsDataTransformer):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
+
+class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
+    file_logger = FileLogger()
+    console_logger = ConsoleLogger()
+
+
+    def transform_date(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
+
+
 
 
 
