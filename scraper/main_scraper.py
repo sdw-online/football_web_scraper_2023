@@ -1,7 +1,7 @@
 import io
 import os
 import boto3
-import List
+from typing import List
 import pandas as pd
 from time import sleep
 from pathlib import Path
