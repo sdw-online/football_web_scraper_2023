@@ -206,6 +206,7 @@ class TableStandingsDataExtractor(IDataExtractor):
             cells = table_row.find_elements(By.TAG_NAME, 'td')
             row_data = [cell.text for cell in cells]
             scraped_content.append(row_data)
+            sleep(1.5)
 
         return scraped_content
 
@@ -479,27 +480,45 @@ class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
 
 if __name__=="__main__":
 
-# Load environment variables to session
-load_dotenv()
+    # Specify the constants for the scraper
+    football_url   =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
+ 
+    local_target_path               =   os.path.abspath('temp_storage/dirty_data')
+    match_date                     =   ['2023-Apr-20']
+    football_url   =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
+
+    table_counter                   =   0
 
 
 
-# Specify the constants for the scraper 
-local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-match_dates                     =   ['2023-Apr-17']
-# match_dates                     =   ['2022-Sep-01', '2022-Oct-01', '2022-Nov-01', '2022-Dec-01', '2023-Jan-01', '2023-Feb-01', '2023-Mar-01', '2023-Mar-07', '2023-Mar-08', '2023-Mar-12']
-# match_dates                     =   ['2022-Sep-01', '2023-Mar-07']
-table_counter                   =   0
-   
+    # Load environment variables to session
+    load_dotenv()
+
+    cfg = Config(WRITE_FILES_TO_CLOUD=False)
+    
 
 
+    # Load webpage 
+    webpage_loader = WebPageLoader()
+    webpage_loader.load_page(football_url)
+    
+
+    # Close popup boxes if they appear on webpage
+    popup_handler = PopUpHandler()
+    popup_handler.close_popup()
+
+    # Extract data 
+    data_extractor = PremierLeagueTableScraper()
+    data_extractor.scrape()
+
+    # Transform data 
+    data_transformer = PremierLeagueTableStandingsDataTransformer()
+    data_transformer.transform_data()
 
 
-if WRITE_FILES_TO_CLOUD:
-    uploader = S3FileUploader(S3_BUCKET, s3_client, S3_FOLDER)
-else:
-    uploader = LocalFileUploader(local_target_path, LOCAL_FOLDER)
+    # Load data to machine 
+    if cfg.WRITE_FILES_TO_CLOUD is not False:
+        data_uploader = LocalCSVPremierLeagueTableStandingsUploader()
+        data_uploader.upload_file()
 
-prem_league_table_df.to_csv(CSV_BUFFER, index=False)
-file_content = CSV_BUFFER.getvalue()
-uploader.upload(prem_league_table_file, file_content)
+    
