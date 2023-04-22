@@ -210,11 +210,12 @@ class WebPageLoader(IWebPageLoader):
 
 
 class PremLeagueTableWebPageLoader(WebPageLoader):
-    def __init__(self, options: webdriver.ChromeOptions(), service: Service(executable_path=ChromeDriverManager().install()), coloured_console_logs: bool=False):
+    def __init__(self, options=None, service=None, coloured_console_logs: bool=False):
         if options is None:
-            options = options
+            options = webdriver.ChromeOptions()
         if service is None:
-            service = service
+            service = Service(executable_path=ChromeDriverManager().install())
+
         self.options = options
         self.service = service
         self.chrome_driver = webdriver.Chrome(service=self.service, options=self.options)
@@ -235,39 +236,47 @@ class PremLeagueTableWebPageLoader(WebPageLoader):
         assert webpage_title in self.chrome_driver.title, f"ERROR: Unable to load site for {webpage_title} ... "
         self.console_logger.log_event_as_debug(">>> Webpage successfully loaded ...")
 
-        
 
 
 
+# ================================================ POPUP HANDLER ================================================
 
-# # ================================================ POPUP HANDLER ================================================
-
-# class IPopUpHandler(ABC):
-#     @abstractmethod
-#     def close_popup(self):
-#         pass
+class IPopUpHandler(ABC):
+    @abstractmethod
+    def close_popup(self):
+        pass
 
 
-# class PopUpHandler(IPopUpHandler):
+class PopUpHandler(IPopUpHandler):
+    @abstractmethod
+    def close_popup(self):
+        pass
 
-#     file_logger = FileLogger()
-#     console_logger = ConsoleLogger()
 
-#     def __init__(self, chrome_driver: webdriver.Chrome):
-#         self.chrome_driver = chrome_driver
+class PremLeagueTablePopUpHandler(PopUpHandler):
+
+    def __init__(self, chrome_driver: webdriver.Chrome, coloured_console_logs: bool=False, file_logger=FileLogger()):
+        self.chrome_driver = chrome_driver
+        self.file_logger = file_logger
+        self.coloured_console_logs = coloured_console_logs
+        if coloured_console_logs:
+            self.console_logger = ColouredConsoleLogger()
+        else:
+            self.console_logger = NonColouredConsoleLogger()
+
     
 
-#     def close_popup(self):
-#         try:
-#             wait = WebDriverWait(self.chrome_driver, 5)
-#             close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
-#             close_popup_box.click()
-#             self.file_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
-#             self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
+    def close_popup(self):
+        try:
+            wait = WebDriverWait(self.chrome_driver, 5)
+            close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
+            close_popup_box.click()
+            self.file_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
+            self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
         
-#         except Exception as e:
-#             self.file_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
-#             self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+        except Exception as e:
+            self.file_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+            self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
 
 
@@ -538,15 +547,16 @@ if __name__=="__main__":
 
 
     # Load webpage 
-    options = webdriver.ChromeOptions()
-    service = Service(executable_path=ChromeDriverManager().install())
-    webpage_loader = PremLeagueTableWebPageLoader(options, service)
+    # options = webdriver.ChromeOptions()
+    # service = Service(executable_path=ChromeDriverManager().install())
+    # webpage_loader = PremLeagueTableWebPageLoader(options, service)
+    webpage_loader = PremLeagueTableWebPageLoader()
     webpage_loader.load_page(football_url)
     
 
     # Close popup boxes if they appear on webpage
-    # popup_handler = PopUpHandler()
-    # popup_handler.close_popup()
+    popup_handler = PremLeagueTablePopUpHandler(webpage_loader)
+    popup_handler.close_popup()
 
     # # Extract data 
     # data_extractor = PremierLeagueTableScraper()

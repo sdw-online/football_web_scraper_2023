@@ -1,6 +1,9 @@
-2023-04-22 13:56:54,139 | DEBUG | This DEBUG message works !!! 
-2023-04-22 13:56:54,140 | INFO | This INFO message works !!! 
-2023-04-22 13:56:54,140 | WARNING | This WARNING message works !!! 
-2023-04-22 13:56:54,140 | CRITICAL | This CRITICAL message works !!! 
-2023-04-22 13:56:54,141 | ERROR | This ERROR message works !!! 
-2023-04-22 13:56:55,875 | DEBUG | >>> Loading webpage using Selenium ...
+2023-04-22 14:11:20,766 | DEBUG | This DEBUG message works !!! 
+2023-04-22 14:11:20,767 | INFO | This INFO message works !!! 
+2023-04-22 14:11:20,767 | WARNING | This WARNING message works !!! 
+2023-04-22 14:11:20,767 | CRITICAL | This CRITICAL message works !!! 
+2023-04-22 14:11:20,768 | ERROR | This ERROR message works !!! 
+2023-04-22 14:11:22,896 | DEBUG | >>> Loading webpage using Selenium ...
+2023-04-22 14:11:27,096 | DEBUG | >>> Webpage successfully loaded ...
+2023-04-22 14:11:27,097 | DEBUG | No cookie pop-up window to close...let's begin scraping for league standings !!
+2023-04-22 14:11:27,097 | DEBUG | No cookie pop-up window to close...let's begin scraping for league standings !!
