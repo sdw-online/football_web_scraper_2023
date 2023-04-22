@@ -271,53 +271,71 @@ class PremLeagueTablePopUpHandler(PopUpHandler):
             wait = WebDriverWait(self.chrome_driver, 5)
             close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
             close_popup_box.click()
-            self.file_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
             self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
         
         except Exception as e:
-            self.file_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
             self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
 
 
 
-# # ================================================ EXTRACTOR ================================================
+# ================================================ EXTRACTOR ================================================
 
-# class IDataExtractor(ABC):
-#     @abstractmethod
-#     def scrape_data(self):
-#         pass
-
-
-# class TableStandingsDataExtractor(IDataExtractor):
-#     @abstractmethod
-#     def scrape_data(self):
-#         pass
+class IDataExtractor(ABC):
+    @abstractmethod
+    def scrape_data(self):
+        pass
 
 
+class TableStandingsDataExtractor(IDataExtractor):
+    @abstractmethod
+    def scrape_data(self):
+        pass
 
-# class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
-
-#     file_logger = FileLogger()
-#     console_logger = ConsoleLogger()
 
 
-#     def __init__(self, chrome_driver: webdriver.Chrome, match_date: str):
-#         self.chrome_driver = chrome_driver
-#         self.match_date = match_date
+class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
+
+
+    def __init__(self, chrome_driver: webdriver.Chrome, match_date: str, coloured_console_logs: bool=False, file_logger=FileLogger()):
+        self.chrome_driver = chrome_driver
+        self.match_date = match_date
+        self.file_logger = file_logger
+        self.coloured_console_logs = coloured_console_logs
+        if self.coloured_console_logs:
+            self.console_logger = ColouredConsoleLogger()
+        else:
+            self.console_logger = NonColouredConsoleLogger()
     
-#     def scrape_data(self):
-#         table = self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
-#         table_rows = table.find_elements(By.XPATH, './/tr')
-#         scraped_content = []
+    def scrape_data(self):
+        table                   =   self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
+        table_rows              =   table.find_elements(By.XPATH, './/tr')
+        table_row_counter       =   0
+        scraped_content         =   []
+        self.console_logger.log_event_as_debug(f'>>>>   Extracting content from HTML elements ...')
 
-#         for table_row in table_rows:
-#             cells = table_row.find_elements(By.TAG_NAME, 'td')
-#             row_data = [cell.text for cell in cells]
-#             scraped_content.append(row_data)
-#             sleep(1.5)
+        for table_row in table_rows:
+            table_row_counter   +=  1
+            console_logger.log_event_as_debug(f'>>>>>>>   Table no {table_row_counter} <<<<<<  ')
+            cells           =   table_row.find_elements(By.TAG_NAME, 'td')
+            row_data        =   []
+            cell_counter    =   0
 
-#         return scraped_content
+            for cell in cells:
+                cell_counter += 1
+                row_data.append(cell.text)
+                self.console_logger.log_event_as_debug(f'>>>>   Table row no "{table_row_counter}", Cell no "{cell_counter}" appended ...')
+                self.console_logger.log_event_as_debug(f'>>>>   ')
+
+                # print(row_data)
+                print(cell.text)
+                # sleep(1.5)
+                # sleep(0.5)
+
+            scraped_content.append(row_data)
+
+        print(scraped_content)
+        return scraped_content
 
 
 
@@ -521,7 +539,7 @@ if __name__=="__main__":
 
     # Specify the constants for the scraper
     local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-    match_date                      =   ['2023-Apr-20']
+    match_date                      =   '2023-Apr-22'
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
@@ -547,9 +565,7 @@ if __name__=="__main__":
 
 
     # Load webpage 
-    # options = webdriver.ChromeOptions()
-    # service = Service(executable_path=ChromeDriverManager().install())
-    # webpage_loader = PremLeagueTableWebPageLoader(options, service)
+    
     webpage_loader = PremLeagueTableWebPageLoader()
     webpage_loader.load_page(football_url)
     
@@ -558,9 +574,10 @@ if __name__=="__main__":
     popup_handler = PremLeagueTablePopUpHandler(webpage_loader)
     popup_handler.close_popup()
 
+
     # # Extract data 
-    # data_extractor = PremierLeagueTableScraper()
-    # prem_league_scraped_content = data_extractor.scrape(football_url)
+    data_extractor = PremLeagueTableStandingsDataExtractor(webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
+    prem_league_scraped_content = data_extractor.scrape_data()
     
 
     # # Transform data 
