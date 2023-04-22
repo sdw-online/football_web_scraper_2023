@@ -1,0 +1,5 @@
+2023-04-22 13:13:02,252 | DEBUG | This works !!! 
+2023-04-22 13:13:02,253 | INFO | This works !!! 
+2023-04-22 13:13:02,253 | WARNING | This works !!! 
+2023-04-22 13:13:02,254 | CRITICAL | This works !!! 
+2023-04-22 13:13:02,254 | ERROR | This works !!! 
