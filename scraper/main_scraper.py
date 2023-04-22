@@ -365,7 +365,7 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
-    def transform_data(self, chrome_driver: webdriver.Chrome=None, scraped_content: List[List[str]] = PremLeagueTableStandingsDataExtractor.scrape_data(), match_date: str = None) -> pd.DataFrame:
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         self.console_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
         
         # prem_league_table_scraper = PremLeagueTableStandingsDataExtractor(chrome_driver, match_date)
@@ -533,7 +533,7 @@ if __name__=="__main__":
 
     # Transform data 
     data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
-    df = data_transformer.transform_data(chrome_driver=webpage_loader.chrome_driver, scraped_content=prem_league_scraped_data, match_date=match_date)
+    df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
 
     print(df)
     # # Load data to machine 
@@ -541,4 +541,4 @@ if __name__=="__main__":
     #     data_uploader = LocalCSVPremierLeagueTableStandingsUploader()
     #     data_uploader.upload_file()
 
-    
+    webpage_loader.chrome_driver.quit()
