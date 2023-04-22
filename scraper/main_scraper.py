@@ -196,22 +196,46 @@ class Config:
 
 
 
-# # ================================================ WEBPAGE LOADER ================================================
+# ================================================ WEBPAGE LOADER ================================================
 
-# class IWebPageLoader(ABC):
-#     @abstractmethod
-#     def load_page(self, url:str):
-#         pass
+class IWebPageLoader(ABC):
+    @abstractmethod
+    def load_page(self, url:str):
+        pass
 
-# class WebPageLoader(IWebPageLoader):
-#     def __init__(self, options: webdriver.ChromeOptions(), service: Service(executable_path=ChromeDriverManager().install())):
-#         self.options = options
-#         self.service = service
-#         self.chrome_driver = webdriver.Chrome(service=self.service, options=self.options)
+class WebPageLoader(IWebPageLoader):
+    @abstractmethod
+    def load_page(self, url:str):
+        pass
 
-    
-#     def load_page(self, url: str):
-#         self.chrome_driver.get(url)
+
+class PremLeagueTableWebPageLoader(WebPageLoader):
+    def __init__(self, options: webdriver.ChromeOptions(), service: Service(executable_path=ChromeDriverManager().install()), coloured_console_logs: bool=False):
+        if options is None:
+            options = options
+        if service is None:
+            service = service
+        self.options = options
+        self.service = service
+        self.chrome_driver = webdriver.Chrome(service=self.service, options=self.options)
+        self.coloured_console_logs = coloured_console_logs
+        if coloured_console_logs:
+            self.console_logger = ColouredConsoleLogger()
+        else:
+            self.console_logger = NonColouredConsoleLogger()
+
+
+    def load_page(self, url: str):
+        webpage_title = 'Premier League'
+        self.console_logger.log_event_as_debug(">>> Loading webpage using Selenium ...")
+        self.chrome_driver.get(url)
+        sleep(3)
+        
+        # Check if webpage loaded successfully 
+        assert webpage_title in self.chrome_driver.title, f"ERROR: Unable to load site for {webpage_title} ... "
+        self.console_logger.log_event_as_debug(">>> Webpage successfully loaded ...")
+
+        
 
 
 
@@ -502,11 +526,11 @@ if __name__=="__main__":
 
 
 
-    console_logger.log_event_as_debug("This works !!! ")
-    console_logger.log_event_as_info("This works !!! ")
-    console_logger.log_event_as_warning("This works !!! ")
-    console_logger.log_event_as_critical("This works !!! ")
-    console_logger.log_event_as_error("This works !!! ")
+    console_logger.log_event_as_debug("This DEBUG message works !!! ")
+    console_logger.log_event_as_info("This INFO message works !!! ")
+    console_logger.log_event_as_warning("This WARNING message works !!! ")
+    console_logger.log_event_as_critical("This CRITICAL message works !!! ")
+    console_logger.log_event_as_error("This ERROR message works !!! ")
 
     # cfg = Config(WRITE_FILES_TO_CLOUD=False)
 
@@ -514,8 +538,10 @@ if __name__=="__main__":
 
 
     # Load webpage 
-    # webpage_loader = WebPageLoader()
-    # webpage_loader.load_page(football_url)
+    options = webdriver.ChromeOptions()
+    service = Service(executable_path=ChromeDriverManager().install())
+    webpage_loader = PremLeagueTableWebPageLoader(options, service)
+    webpage_loader.load_page(football_url)
     
 
     # Close popup boxes if they appear on webpage

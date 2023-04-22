@@ -1,5 +1,6 @@
-2023-04-22 13:38:42,646 | DEBUG | This works !!! 
-2023-04-22 13:38:42,646 | INFO | This works !!! 
-2023-04-22 13:38:42,647 | WARNING | This works !!! 
-2023-04-22 13:38:42,647 | CRITICAL | This works !!! 
-2023-04-22 13:38:42,647 | ERROR | This works !!! 
+2023-04-22 13:56:54,139 | DEBUG | This DEBUG message works !!! 
+2023-04-22 13:56:54,140 | INFO | This INFO message works !!! 
+2023-04-22 13:56:54,140 | WARNING | This WARNING message works !!! 
+2023-04-22 13:56:54,140 | CRITICAL | This CRITICAL message works !!! 
+2023-04-22 13:56:54,141 | ERROR | This ERROR message works !!! 
+2023-04-22 13:56:55,875 | DEBUG | >>> Loading webpage using Selenium ...
