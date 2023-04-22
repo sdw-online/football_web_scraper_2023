@@ -103,17 +103,7 @@ class ConsoleLogger(ILogger):
     def log_event_as_error(self, message: str):
         self.logger.error(message)
 
-     
-
-
-
-
-
-
-
-
-
-
+ 
 
 # ================================================ CONFIG ================================================
 
@@ -136,9 +126,7 @@ class Config:
 
 
 
-
-
-# ================================================ SCRAPER ================================================
+# ================================================ WEBPAGE LOADER ================================================
 
 class IWebPageLoader(ABC):
     @abstractmethod
@@ -156,6 +144,9 @@ class WebPageLoader(IWebPageLoader):
         self.chrome_driver.get(url)
 
 
+
+
+# ================================================ POPUP HANDLER ================================================
 
 class IPopUpHandler(ABC):
     @abstractmethod
@@ -185,12 +176,24 @@ class PopUpHandler(IPopUpHandler):
             self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
 
+
+
+# ================================================ EXTRACTOR ================================================
+
 class IDataExtractor(ABC):
     @abstractmethod
     def scrape_data(self):
         pass
 
+
 class TableStandingsDataExtractor(IDataExtractor):
+    @abstractmethod
+    def scrape_data(self):
+        pass
+
+
+
+class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
     file_logger = FileLogger()
     console_logger = ConsoleLogger()
@@ -216,6 +219,7 @@ class TableStandingsDataExtractor(IDataExtractor):
 
 
 
+# ================================================ SCRAPER ================================================
 
 
 class IScraper(ABC):
@@ -237,7 +241,7 @@ class PremierLeagueTableScraper(IScraper):
     match_date: str = '2023-Apr-20'
 
 
-    def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: IDataExtractor):
+    def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: PremLeagueTableStandingsDataExtractor):
         super().__init__(webpage_loader, popup_handler, data_extractor)
         self.match_date = match_date
     
