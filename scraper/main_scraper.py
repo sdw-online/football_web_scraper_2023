@@ -465,8 +465,12 @@ class LocalFileUploader(IFileUploader):
 class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
     cfg = Config()
     
-    def __init__(self, target_path: str= cfg.LOCAL_TARGET_PATH, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
-        self.target_path = target_path
+    def __init__(self, target_path: str=None, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
+        
+        if target_path is None:
+            target_path = cfg.LOCAL_TARGET_PATH
+            self.target_path = target_path
+
         self.file_name = file_name
         self.file_logger = file_logger
         self.coloured_console_logs = coloured_console_logs
@@ -475,14 +479,18 @@ class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
-    def upload_file(self, prem_league_df: pd.DataFrame):
-        prem_league_table_file = f'{self.target_path}/{self.file_name}'
+    def upload_file(self, prem_league_df: pd.DataFrame, match_date: str):
+        self.console_logger.log_event_as_debug(f">>> Saving Prem League table file into local folder...")
+        # self.console_logger.log_event_as_debug(f">>> File path: {self.target_path} ")
+        # self.console_logger.log_event_as_debug(f">>> File name: {self.target_path}/{self.file_name}  ")
+
+        prem_league_table_file = f'{self.target_path}/{self.file_name}_{match_date}'
 
         prem_league_df.to_csv(f'{prem_league_table_file}.csv', index=False)
         self.file_logger.log_event_as_debug(f"")
-        self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{prem_league_table_file}' file to local target location... ")
+        self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{self.file_name}' file to local target location... ")
         self.file_logger.log_event_as_debug(f"")
-            
+
 
 
 
@@ -511,7 +519,9 @@ if __name__=="__main__":
     console_logger.log_event_as_critical("This CRITICAL message works !!! ")
     console_logger.log_event_as_error("This ERROR message works !!! ")
 
-    # cfg = Config(WRITE_FILES_TO_CLOUD=False)
+    cfg = Config(WRITE_FILES_TO_CLOUD=False)
+
+    # print(cfg.LOCAL_TARGET_PATH)
 
     
 
@@ -540,12 +550,8 @@ if __name__=="__main__":
 
     # Load data 
     local_data_uploader = LocalCSVPremierLeagueTableStandingsUploader(coloured_console_logs=False)
-    local_data_uploader.upload_file(df)
+    local_data_uploader.upload_file(df, match_date=match_date)
 
-   
-    # # Load data to machine 
-    # if cfg.WRITE_FILES_TO_CLOUD is not False:
-    #     data_uploader = LocalCSVPremierLeagueTableStandingsUploader()
-    #     data_uploader.upload_file()
 
+    # Close Selenium Chrome driver 
     webpage_loader.chrome_driver.quit()
