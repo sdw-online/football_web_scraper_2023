@@ -238,6 +238,20 @@ class PremLeagueTableWebPageLoader(WebPageLoader):
         self.console_logger.log_event_as_debug(">>> Webpage successfully loaded ...")
 
 
+class BundesligaTableWebPageLoader(WebPageLoader):
+    pass
+
+
+class LaligaTableWebPageLoader(WebPageLoader):
+    pass
+
+
+class SerieATableWebPageLoader(WebPageLoader):
+    pass
+
+
+class Ligue1TableWebPageLoader(WebPageLoader):
+    pass
 
 
 # ================================================ POPUP HANDLER ================================================
@@ -278,6 +292,20 @@ class PremLeagueTablePopUpHandler(PopUpHandler):
             self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
 
+class BundesligaTablePopUpHandler(PopUpHandler):
+    pass
+
+
+class LaLigaTablePopUpHandler(PopUpHandler):
+    pass
+
+
+class SerieATablePopUpHandler(PopUpHandler):
+    pass
+
+
+class Ligue1TablePopUpHandler(PopUpHandler):
+    pass
 
 
 # ================================================ DATA EXTRACTOR ================================================
@@ -335,6 +363,20 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
 
 
+class BundesligaTableStandingsDataExtractor(TableStandingsDataExtractor):
+    pass
+
+
+class LaligaTableStandingsDataExtractor(TableStandingsDataExtractor):
+    pass
+
+
+class SerieATableStandingsDataExtractor(TableStandingsDataExtractor):
+    pass
+
+
+class Ligue1TableStandingsDataExtractor(TableStandingsDataExtractor):
+    pass
 
 
 # ================================================ DATA TRANSFORMER ================================================
@@ -416,16 +458,21 @@ class S3CSVFileUploader(S3FileUploader):
 
 
 
-class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
-    cfg = Config()
-    # prem_league_df = PremierLeagueTableStandingsDataTransformer.transform_data()
-    
+class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
 
-    def __init__(self, s3_client: str = cfg.S3_CLIENT, s3_bucket: str = cfg._S3_BUCKET, s3_folder: str = cfg._S3_FOLDER, s3_region: str = cfg._S3_REGION):
-        self.s3_client: str = s3_client
-        self.s3_bucket: str = s3_bucket
-        self.s3_folder: str = s3_folder
-        self.s3_region: str = s3_region
+    def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger()):
+        self.cfg                    =   Config()
+        self.s3_client: str         =   self.cfg.S3_CLIENT
+        self.s3_bucket: str         =   self.cfg._S3_BUCKET
+        self.s3_folder: str         =   self.cfg._S3_FOLDER
+        self.s3_region: str         =   self.cfg._S3_REGION
+
+        self.file_logger            =   file_logger
+        self.coloured_console_logs  =   coloured_console_logs
+        if self.coloured_console_logs:
+            self.console_logger = ColouredConsoleLogger()
+        else:
+            self.console_logger = NonColouredConsoleLogger()
 
         self.file_name_prefix: str = 'prem_league_table'
         self.file_format: str = 'csv'
@@ -450,9 +497,29 @@ class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
             raise ImportError("Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
 
 
+class BundesligaTableS3CSVUploader(S3CSVFileUploader):
+    pass
+
+
+class LaligaTableS3CSVUploader(S3CSVFileUploader):
+    pass
+
+
+class SerieATableS3CSVUploader(S3CSVFileUploader):
+    pass
+
+
+class Ligue1TableS3CSVUploader(S3CSVFileUploader):
+    pass
+
+
+
+
+
 
 class S3JSONFileUploader(S3FileUploader):
     pass
+
 
 
 
@@ -462,7 +529,7 @@ class LocalFileUploader(IFileUploader):
         pass
 
 
-class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
+class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
     
     def __init__(self, target_path: str=None, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.cfg = Config()
@@ -489,6 +556,21 @@ class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
         self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{self.file_name}' file to local target location... ")
         self.file_logger.log_event_as_debug(f"")
 
+
+class BundesligaTableLocalCSVUploader(LocalFileUploader):
+    pass
+
+
+class LaligaTableLocalCSVUploader(LocalFileUploader):
+    pass
+
+
+class SerieATableLocalCSVUploader(LocalFileUploader):
+    pass
+
+
+class Ligue1TableLocalCSVUploader(LocalFileUploader):
+    pass
 
 
 
@@ -529,7 +611,7 @@ if __name__=="__main__":
 
 
     # Load data 
-    local_data_uploader = LocalCSVPremierLeagueTableStandingsUploader(coloured_console_logs=False)
+    local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
     local_data_uploader.upload_file(df, match_date=match_date)
 
 
