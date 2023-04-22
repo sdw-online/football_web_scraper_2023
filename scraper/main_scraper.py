@@ -74,6 +74,29 @@ class FileLogger(ILogger):
 
 
 class ConsoleLogger(ILogger):
+
+    @abstractmethod
+    def log_event_as_debug(self, message: str):
+        pass
+
+    @abstractmethod
+    def log_event_as_info(self, message: str):
+        pass
+
+    @abstractmethod
+    def log_event_as_warning(self, message: str):
+        pass
+    
+    @abstractmethod
+    def log_event_as_critical(self, message: str):
+        pass
+    
+    @abstractmethod
+    def log_event_as_error(self, message: str):
+        pass
+
+
+class ColouredConsoleLogger(ConsoleLogger):
     def __init__(self, coloured: bool =True, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
@@ -92,17 +115,16 @@ class ConsoleLogger(ILogger):
                                                                                     )
         self.coloured = coloured
         self.console_handler.setFormatter(self.console_formatter)
+        coloredlogs.install(level=level)
+
         if __name__=="__main__":
             self.logger.addHandler(self.console_handler)
 
-        if self.coloured:
-            coloredlogs.install(level=level)
         
 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
         
-
     def log_event_as_info(self, message: str):
         self.logger.info(message)
 
@@ -115,26 +137,62 @@ class ConsoleLogger(ILogger):
     def log_event_as_error(self, message: str):
         self.logger.error(message)
 
+
+
+
+class NonColouredConsoleLogger(ConsoleLogger):
+    def __init__(self, detailed_logs: bool= False, level=logging.DEBUG):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(level)
+        self.console_handler = logging.StreamHandler()
+
+        self.logger.addHandler(self.console_handler)
+
+        self.detailed_logs = detailed_logs
+        if self.detailed_logs:
+            detailed_log_format: str='%(asctime)s | %(levelname)s | %(message)s'
+            self.console_formatter = logging.Formatter(detailed_log_format)
+            self.console_handler.setFormatter(self.console_formatter)
+        else:
+            simple_log_format: str='%(message)s'
+            self.console_formatter = logging.Formatter(simple_log_format)
+            self.console_handler.setFormatter(self.console_formatter)
+        
+
+    def log_event_as_debug(self, message: str):
+        self.logger.debug(message)
+        
+    def log_event_as_info(self, message: str):
+        self.logger.info(message)
+
+    def log_event_as_warning(self, message: str):
+        self.logger.warning(message)
+
+    def log_event_as_critical(self, message: str):
+        self.logger.critical(message)
+    
+    def log_event_as_error(self, message: str):
+        self.logger.error(message)
  
 
-# # ================================================ CONFIG ================================================
+# ================================================ CONFIG ================================================
 
 
 
-# # Set up environment variables
-# class Config:
-#     def __init__(self, WRITE_FILES_TO_CLOUD: bool = False):
-#         self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
-#         self._AWS_SECRET_KEY             =   os.getenv("SECRET_ACCESS_KEY")
-#         self._S3_REGION                  =   os.getenv("REGION_NAME")
-#         self._S3_BUCKET                  =   os.getenv("S3_BUCKET")
-#         self._S3_FOLDER                  =   os.getenv("S3_FOLDER")
+# Set up environment variables
+class Config:
+    def __init__(self, WRITE_FILES_TO_CLOUD: bool = False):
+        self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
+        self._AWS_SECRET_KEY             =   os.getenv("SECRET_ACCESS_KEY")
+        self._S3_REGION                  =   os.getenv("REGION_NAME")
+        self._S3_BUCKET                  =   os.getenv("S3_BUCKET")
+        self._S3_FOLDER                  =   os.getenv("S3_FOLDER")
 
-#         # Set up constants for S3 file to be imported
-#         self.S3_CLIENT                  =   boto3.client('s3', aws_access_key_id=self._AWS_ACCESS_KEY, aws_secret_access_key=self._AWS_SECRET_KEY, region_name=self._S3_REGION)
+        # Set up constants for S3 file to be imported
+        self.S3_CLIENT                  =   boto3.client('s3', aws_access_key_id=self._AWS_ACCESS_KEY, aws_secret_access_key=self._AWS_SECRET_KEY, region_name=self._S3_REGION)
         
-#         # Add a flag for saving CSV files to the cloud 
-#         self.WRITE_FILES_TO_CLOUD = WRITE_FILES_TO_CLOUD
+        # Add a flag for saving CSV files to the cloud 
+        self.WRITE_FILES_TO_CLOUD = WRITE_FILES_TO_CLOUD
 
 
 
@@ -439,7 +497,8 @@ if __name__=="__main__":
     load_dotenv()
 
     file_logger = FileLogger()
-    console_logger = ConsoleLogger()
+    console_logger = NonColouredConsoleLogger(detailed_logs=True)
+    
 
 
 
@@ -450,6 +509,7 @@ if __name__=="__main__":
     console_logger.log_event_as_error("This works !!! ")
 
     # cfg = Config(WRITE_FILES_TO_CLOUD=False)
+
     
 
 
