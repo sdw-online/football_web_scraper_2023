@@ -327,10 +327,7 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
                 self.console_logger.log_event_as_debug(f'>>>>   Table row no "{table_row_counter}", Cell no "{cell_counter}" appended ...')
                 self.console_logger.log_event_as_debug(f'>>>>   ')
 
-                # print(row_data)
                 print(cell.text)
-                # sleep(1.5)
-                # sleep(0.5)
 
             scraped_content.append(row_data)
 
@@ -341,56 +338,60 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
 
 
-# # ================================================ DATA TRANSFORMER ================================================
+# ================================================ DATA TRANSFORMER ================================================
 
 
-# class IDataTransformer(ABC):
-#     @abstractmethod
-#     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
-#         pass
-
-
-
-# class TableStandingsDataTransformer(IDataTransformer):
-#     @abstractmethod
-#     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
-#         pass
+class IDataTransformer(ABC):
+    @abstractmethod
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
 
 
 
+class TableStandingsDataTransformer(IDataTransformer):
+    @abstractmethod
+    def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+        pass
 
-# class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
-#     file_logger = FileLogger()
-#     console_logger = ConsoleLogger()
 
 
-#     def transform_data(self, scraped_content: List[List[str]], match_date: str = '2023-Apr-20') -> pd.DataFrame:
-#         self.file_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
-#         self.console_logger.log_event_as_debug(f'>>>> Extracting content from HTML elements...')
+
+class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
+    def __init__(self,coloured_console_logs: bool=False, file_logger=FileLogger()):
+        self.file_logger = file_logger
+        self.coloured_console_logs = coloured_console_logs
+        if self.coloured_console_logs:
+            self.console_logger = ColouredConsoleLogger()
+        else:
+            self.console_logger = NonColouredConsoleLogger()
+
+    def transform_data(self, chrome_driver: webdriver.Chrome=None, scraped_content: List[List[str]] = None, match_date: str = None) -> pd.DataFrame:
+        self.console_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
         
-#         scraper = PremierLeagueTableScraper()
-#         scraped_data = scraper.scrape()
+        prem_league_table_scraper = PremLeagueTableStandingsDataExtractor(chrome_driver, match_date)
+        prem_league_scraped_columns = prem_league_table_scraper.scrape_data()
 
-#         table_df = pd.DataFrame(data=scraped_content[1:], columns=[scraped_content[0]])
-#         table_df['match_date'] = match_date
+        table_df = pd.DataFrame(data=scraped_content[1:], columns=[prem_league_scraped_columns[0]])
+        table_df['match_date'] = match_date
 
-#         return table_df
-
-
-# class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
-#         pass
+        print(table_df)
+        return table_df
 
 
-# class LaligaTableStandingsDataTransformer(TableStandingsDataTransformer):
-#         pass
+class BundesligaTableStandingsDataTransformer(TableStandingsDataTransformer):
+        pass
 
 
-# class SerieATableStandingsDataTransformer(TableStandingsDataTransformer):
-#         pass
+class LaligaTableStandingsDataTransformer(TableStandingsDataTransformer):
+        pass
 
 
-# class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
-#         pass
+class SerieATableStandingsDataTransformer(TableStandingsDataTransformer):
+        pass
+
+
+class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
+        pass
 
 
 # # ================================================ UPLOADER ================================================
@@ -528,11 +529,11 @@ if __name__=="__main__":
     prem_league_scraped_content = data_extractor.scrape_data()
     
 
-    # # Transform data 
-    # data_transformer = PremierLeagueTableStandingsDataTransformer()
-    # data_transformer.transform_data()
+    # Transform data 
+    data_transformer = PremierLeagueTableStandingsDataTransformer()
+    df = data_transformer.transform_data(prem_league_scraped_content, match_date=match_date)
 
-
+    print(df)
     # # Load data to machine 
     # if cfg.WRITE_FILES_TO_CLOUD is not False:
     #     data_uploader = LocalCSVPremierLeagueTableStandingsUploader()
