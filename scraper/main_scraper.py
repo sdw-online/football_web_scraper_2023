@@ -187,6 +187,7 @@ class Config:
         self._S3_REGION                  =   os.getenv("REGION_NAME")
         self._S3_BUCKET                  =   os.getenv("S3_BUCKET")
         self._S3_FOLDER                  =   os.getenv("S3_FOLDER")
+        self.LOCAL_TARGET_PATH           =   os.getenv("LOCAL_TARGET_PATH")
 
         # Set up constants for S3 file to be imported
         self.S3_CLIENT                  =   boto3.client('s3', aws_access_key_id=self._AWS_ACCESS_KEY, aws_secret_access_key=self._AWS_SECRET_KEY, region_name=self._S3_REGION)
@@ -279,7 +280,7 @@ class PremLeagueTablePopUpHandler(PopUpHandler):
 
 
 
-# ================================================ EXTRACTOR ================================================
+# ================================================ DATA EXTRACTOR ================================================
 
 class IDataExtractor(ABC):
     @abstractmethod
@@ -295,7 +296,6 @@ class TableStandingsDataExtractor(IDataExtractor):
 
 
 class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
-
 
     def __init__(self, chrome_driver: webdriver.Chrome, match_date: str, coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.chrome_driver = chrome_driver
@@ -331,7 +331,6 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
             scraped_content.append(row_data)
 
-        # print(scraped_content)
         return scraped_content
 
 
@@ -368,15 +367,12 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         self.console_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
         
-        # prem_league_table_scraper = PremLeagueTableStandingsDataExtractor(chrome_driver, match_date)
-        # prem_league_scraped_columns = prem_league_table_scraper.scrape_data()
-        scraped_data = scraped_content[1:]
-        scraped_columns = scraped_content[0]
+        scraped_data            =   scraped_content[1:]
+        scraped_columns         =   scraped_content[0]
 
-        table_df = pd.DataFrame(data=scraped_data, columns=[scraped_columns])
-        table_df['match_date'] = match_date
+        table_df                =   pd.DataFrame(data=scraped_data, columns=scraped_columns)
+        table_df['match_date']  =   match_date
 
-        print(table_df)
         return table_df
 
 
@@ -396,91 +392,96 @@ class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
         pass
 
 
-# # ================================================ UPLOADER ================================================
+# ================================================ DATA UPLOADER ================================================
 
 
-# class IFileUploader(ABC):
-#     file_logger = FileLogger()
-#     console_logger = ConsoleLogger()
+class IFileUploader(ABC):
 
-#     @abstractmethod
-#     def upload_file(self):
-#         pass
-
-
-
-# class S3FileUploader(IFileUploader):
-#     @abstractmethod
-#     def upload_file(self):
-#         pass
-
-
-# class S3CSVFileUploader(S3FileUploader):
-#     @abstractmethod
-#     def upload_file(self):
-#         pass
+    @abstractmethod
+    def upload_file(self):
+        pass
 
 
 
-# class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
-#     cfg = Config()
-#     prem_league_df = PremierLeagueTableStandingsDataTransformer.transform_data()
+class S3FileUploader(IFileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+class S3CSVFileUploader(S3FileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+
+class S3CSVPremierLeagueTableStandingsUploader(S3CSVFileUploader):
+    cfg = Config()
+    # prem_league_df = PremierLeagueTableStandingsDataTransformer.transform_data()
     
 
-#     def __init__(self, s3_client: str = cfg.S3_CLIENT, s3_bucket: str = cfg._S3_BUCKET, s3_folder: str = cfg._S3_FOLDER, s3_region: str = cfg._S3_REGION):
-#         self.s3_client: str = s3_client
-#         self.s3_bucket: str = s3_bucket
-#         self.s3_folder: str = s3_folder
-#         self.s3_region: str = s3_region
+    def __init__(self, s3_client: str = cfg.S3_CLIENT, s3_bucket: str = cfg._S3_BUCKET, s3_folder: str = cfg._S3_FOLDER, s3_region: str = cfg._S3_REGION):
+        self.s3_client: str = s3_client
+        self.s3_bucket: str = s3_bucket
+        self.s3_folder: str = s3_folder
+        self.s3_region: str = s3_region
 
-#         self.file_name_prefix: str = 'prem_league_table'
-#         self.file_format: str = 'csv'
-
-
-#     def upload_file(self, table_standings_df: pd.DataFrame, match_date: str):
-
-#         if self.cfg.WRITE_FILES_TO_CLOUD:
-#             try:
-#                 S3_KEY = f"{self.s3_folder}/{self.file_name_prefix}_{match_date}.{self.file_format}"
-#                 CSV_BUFFER = io.StringIO()
-#                 table_standings_df.to_csv(CSV_BUFFER, index=False)
-#                 RAW_TABLE_ROWS_AS_STRING_VALUES = CSV_BUFFER.getvalue()
-
-#                 self.s3_client.put_object(Bucket=self.s3_bucket, Key=S3_KEY, Body=RAW_TABLE_ROWS_AS_STRING_VALUES)
-
-#             except Exception as e:
-#                 self.file_logger.log_event_as_warning(e)
-#                 self.console_logger.log_event_as_warning(e)
-#         else:
-#             self.file_logger.log_event_as_error(">>> Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
-#             raise ImportError("Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
+        self.file_name_prefix: str = 'prem_league_table'
+        self.file_format: str = 'csv'
 
 
+    def upload_file(self, table_standings_df: pd.DataFrame, match_date: str):
 
-# class S3JSONFileUploader(S3FileUploader):
-#     pass
+        if self.cfg.WRITE_FILES_TO_CLOUD:
+            try:
+                S3_KEY = f"{self.s3_folder}/{self.file_name_prefix}_{match_date}.{self.file_format}"
+                CSV_BUFFER = io.StringIO()
+                table_standings_df.to_csv(CSV_BUFFER, index=False)
+                RAW_TABLE_ROWS_AS_STRING_VALUES = CSV_BUFFER.getvalue()
+
+                self.s3_client.put_object(Bucket=self.s3_bucket, Key=S3_KEY, Body=RAW_TABLE_ROWS_AS_STRING_VALUES)
+
+            except Exception as e:
+                self.file_logger.log_event_as_warning(e)
+                self.console_logger.log_event_as_warning(e)
+        else:
+            self.file_logger.log_event_as_error(">>> Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
+            raise ImportError("Unable to upload to S3 bucket: Set 'WRITE_FILES_TO_CLOUD' to 'True' to upload files to S3 bucket.")
 
 
 
-# class LocalFileUploader(IFileUploader):
-#     @abstractmethod
-#     def upload_file(self):
-#         pass
+class S3JSONFileUploader(S3FileUploader):
+    pass
 
 
-# class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
-#     cfg = Config()
 
-#     def __init__(self, target_path: str):
-#         self.target_path = target_path
+class LocalFileUploader(IFileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
 
-#     def upload_file(self, file_name: str, prem_league_df: pd.DataFrame):
-#         prem_league_table_file = f'{self.target_path}/{file_name}'
 
-#         prem_league_df.to_csv(f'{prem_league_table_file}.csv', index=False)
-#         self.file_logger.log_event_as_debug(f"")
-#         self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{prem_league_table_file}' file to local target location... ")
-#         self.file_logger.log_event_as_debug(f"")
+class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
+    cfg = Config()
+    
+    def __init__(self, target_path: str= cfg.LOCAL_TARGET_PATH, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
+        self.target_path = target_path
+        self.file_name = file_name
+        self.file_logger = file_logger
+        self.coloured_console_logs = coloured_console_logs
+        if self.coloured_console_logs:
+            self.console_logger = ColouredConsoleLogger()
+        else:
+            self.console_logger = NonColouredConsoleLogger()
+
+    def upload_file(self, prem_league_df: pd.DataFrame):
+        prem_league_table_file = f'{self.target_path}/{self.file_name}'
+
+        prem_league_df.to_csv(f'{prem_league_table_file}.csv', index=False)
+        self.file_logger.log_event_as_debug(f"")
+        self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{prem_league_table_file}' file to local target location... ")
+        self.file_logger.log_event_as_debug(f"")
             
 
 
@@ -534,8 +535,14 @@ if __name__=="__main__":
     # Transform data 
     data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
     df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
-
     print(df)
+
+
+    # Load data 
+    local_data_uploader = LocalCSVPremierLeagueTableStandingsUploader(coloured_console_logs=False)
+    local_data_uploader.upload_file(df)
+
+   
     # # Load data to machine 
     # if cfg.WRITE_FILES_TO_CLOUD is not False:
     #     data_uploader = LocalCSVPremierLeagueTableStandingsUploader()
