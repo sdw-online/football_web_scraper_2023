@@ -340,58 +340,6 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
 
 
-# # ================================================ SCRAPER ================================================
-
-
-# class IScraper(ABC):
-#     def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: IDataExtractor):
-#         self.webpage_loader = webpage_loader
-#         self.popup_handler = popup_handler
-#         self.data_extractor = data_extractor
-
-    
-#     @abstractmethod
-#     def scrape(self):
-#         pass
-
-
-
-# class PremierLeagueTableScraper(IScraper):
-#     file_logger = FileLogger()
-#     console_logger = ConsoleLogger()
-#     match_date: str = '2023-Apr-20'
-
-
-#     def __init__(self, webpage_loader: IWebPageLoader, popup_handler: IPopUpHandler, data_extractor: PremLeagueTableStandingsDataExtractor):
-#         super().__init__(webpage_loader, popup_handler, data_extractor)
-#         self.match_date = match_date
-    
-#     def scrape(self, url: str = f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'):
-#         self.webpage_loader.load_page(url)
-#         self.popup_handler.close_popup()
-#         scraped_content = self.data_extractor.scrape_data()
-#         self.file_logger.log_event_as_debug(">>>    Scraping Premier League table standings completed! ")
-#         self.console_logger.log_event_as_debug(">>>    Scraping Premier League table standings completed! ")
-        
-#         return scraped_content
-        
-
-# class BundesligaTableScraper(IScraper):
-#     pass
-
-
-# class LaLigaTableScraper(IScraper):
-#     pass
-
-
-# class SerieATableScraper(IScraper):
-#     pass
-
-
-# class Ligue1TableScraper(IScraper):
-#     pass
-
-
 
 # # ================================================ DATA TRANSFORMER ================================================
 
