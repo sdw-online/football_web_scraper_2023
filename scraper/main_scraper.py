@@ -484,7 +484,7 @@ class LocalCSVPremierLeagueTableStandingsUploader(LocalFileUploader):
 
         prem_league_table_file = f'{self.target_path}/{self.file_name}_{match_date}'
         prem_league_df.to_csv(f'{prem_league_table_file}.csv', index=False)
-        
+
         self.file_logger.log_event_as_debug(f"")
         self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{self.file_name}' file to local target location... ")
         self.file_logger.log_event_as_debug(f"")
@@ -507,7 +507,6 @@ if __name__=="__main__":
 
 
     # Load webpage 
-    
     webpage_loader = PremLeagueTableWebPageLoader()
     webpage_loader.load_page(football_url)
     
@@ -535,3 +534,4 @@ if __name__=="__main__":
 
     # Close Selenium Chrome driver 
     webpage_loader.chrome_driver.quit()
+    
