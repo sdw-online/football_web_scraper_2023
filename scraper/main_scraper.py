@@ -611,21 +611,21 @@ if __name__=="__main__":
     popup_handler.close_popup()
 
 
-    # # Extract data 
-    # data_extractor = PremLeagueTableStandingsDataExtractor(chrome_driver=webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
-    # prem_league_scraped_data = data_extractor.scrape_data()
+    # Extract data 
+    data_extractor = PremLeagueTableStandingsDataExtractor(chrome_driver=webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
+    prem_league_scraped_data = data_extractor.scrape_data()
     
 
-    # # Transform data 
-    # data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
-    # df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
-    # print(df)
+    # Transform data 
+    data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
+    df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
+    print(df)
 
 
-    # # Load data 
-    # local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
-    # local_data_uploader.upload_file(df, match_date=match_date)
+    # Load data 
+    local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
+    local_data_uploader.upload_file(df, match_date=match_date)
 
 
-    # # Close Selenium Chrome driver 
-    # webpage_loader.chrome_driver.quit()
+    # Close Selenium Chrome driver 
+    webpage_loader.chrome_driver.quit()
