@@ -475,8 +475,8 @@ class S3CSVFileUploader(S3FileUploader):
 
 class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
 
-    def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger()):
-        self.cfg                    =   Config()
+    def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger(), cfg: Config = Config(WRITE_FILES_TO_CLOUD=True)):
+        self.cfg                    =   cfg
         self.s3_client: str         =   self.cfg.S3_CLIENT
         self.s3_bucket: str         =   self.cfg._S3_BUCKET
         self.s3_folder: str         =   self.cfg._S3_FOLDER
@@ -493,13 +493,13 @@ class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
 
 
 
-    def upload_file(self, table_standings_df: pd.DataFrame, match_date: str):
+    def upload_file(self, prem_league_df: pd.DataFrame, match_date: str):
 
         if self.cfg.WRITE_FILES_TO_CLOUD:
             try:
                 S3_KEY = f"{self.s3_folder}/{self.file_name_prefix}_{match_date}.csv"
                 CSV_BUFFER = io.StringIO()
-                table_standings_df.to_csv(CSV_BUFFER, index=False)
+                prem_league_df.to_csv(CSV_BUFFER, index=False)
                 RAW_TABLE_ROWS_AS_STRING_VALUES = CSV_BUFFER.getvalue()
 
                 self.s3_client.put_object(Bucket=self.s3_bucket, Key=S3_KEY, Body=RAW_TABLE_ROWS_AS_STRING_VALUES)
@@ -604,6 +604,7 @@ if __name__=="__main__":
 
     # Load environment variables to session
     load_dotenv()
+
     
 
 
@@ -631,6 +632,9 @@ if __name__=="__main__":
 
 
     # Load data 
+    
+    
+
     # local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
     # local_data_uploader.upload_file(df, match_date=match_date)
 
