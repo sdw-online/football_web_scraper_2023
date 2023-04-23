@@ -270,14 +270,20 @@ class PopUpHandler(IPopUpHandler):
 
 class PremLeagueTablePopUpHandler(PopUpHandler):
 
-    def __init__(self, chrome_driver: webdriver.Chrome, coloured_console_logs: bool=False, file_logger=FileLogger()):
+    def __init__(self, chrome_driver: webdriver.Chrome, logger: logging.Logger, coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.chrome_driver = chrome_driver
-        self.file_logger = file_logger
+        self.file_logger = file_logger  
+        
         self.coloured_console_logs = coloured_console_logs
         if coloured_console_logs:
             self.console_logger = ColouredConsoleLogger()
         else:
             self.console_logger = NonColouredConsoleLogger()
+        
+        self.logger = logger
+        self.logger.propagate = True
+        
+        
 
     
 
@@ -286,10 +292,12 @@ class PremLeagueTablePopUpHandler(PopUpHandler):
             wait = WebDriverWait(self.chrome_driver, 5)
             close_popup_box = wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
             close_popup_box.click()
-            self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
+            # self.console_logger.log_event_as_debug(f'>>>>   Closing cookie pop-up window ...')
+            self.logger.debug(f'>>>>   Closing cookie pop-up window ...')
         
         except Exception as e:
-            self.console_logger.log_event_as_debug(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+            # self.console_logger.log_event_as_error(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
+            self.logger.error(f'No cookie pop-up window to close...let\'s begin scraping for league standings !!')
 
 
 class BundesligaTablePopUpHandler(PopUpHandler):
@@ -352,8 +360,8 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
             for cell in cells:
                 cell_counter += 1
                 row_data.append(cell.text)
-                self.console_logger.log_event_as_debug(f'>>>>   Table row no "{table_row_counter}", Cell no "{cell_counter}" appended ...')
-                self.console_logger.log_event_as_debug(f'>>>>   ')
+                self.file_logger.log_event_as_debug(f'>>>>   Table row no "{table_row_counter}", Cell no "{cell_counter}" appended ...')
+                self.file_logger.log_event_as_debug(f'>>>>   ')
 
                 print(cell.text)
 
@@ -407,13 +415,16 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
             self.console_logger = NonColouredConsoleLogger()
 
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
-        self.console_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
+        self.file_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
         
         scraped_data            =   scraped_content[1:]
         scraped_columns         =   scraped_content[0]
 
         table_df                =   pd.DataFrame(data=scraped_data, columns=scraped_columns)
         table_df['match_date']  =   match_date
+
+
+        self.file_logger.log_event_as_debug(f'>>>> Successfully transformed Premier League content...')
 
         return table_df
 
@@ -552,9 +563,9 @@ class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
         prem_league_table_file = f'{self.target_path}/{self.file_name}_{match_date}'
         prem_league_df.to_csv(f'{prem_league_table_file}.csv', index=False)
         
-        self.file_logger.log_event_as_debug(f"")
-        self.file_logger.log_event_as_debug(f">>> Successfully written and loaded '{self.file_name}' file to local target location... ")
-        self.file_logger.log_event_as_debug(f"")
+        self.console_logger.log_event_as_debug(f"")
+        self.console_logger.log_event_as_debug(f">>> Successfully written and loaded '{self.file_name}' file to local target location... ")
+        self.console_logger.log_event_as_debug(f"")
 
 
 class BundesligaTableLocalCSVUploader(LocalFileUploader):
@@ -579,7 +590,7 @@ if __name__=="__main__":
 
     # Specify the constants for the scraper
     local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-    match_date                      =   '2023-Apr-22'
+    match_date                      =   '2023-Apr-23'
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
@@ -595,25 +606,26 @@ if __name__=="__main__":
     
 
     # Close popup boxes if they appear on webpage
-    popup_handler = PremLeagueTablePopUpHandler(webpage_loader)
+    logger = logging.getLogger(__name__)
+    popup_handler = PremLeagueTablePopUpHandler(webpage_loader.chrome_driver, logger)
     popup_handler.close_popup()
 
 
-    # Extract data 
-    data_extractor = PremLeagueTableStandingsDataExtractor(chrome_driver=webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
-    prem_league_scraped_data = data_extractor.scrape_data()
+    # # Extract data 
+    # data_extractor = PremLeagueTableStandingsDataExtractor(chrome_driver=webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
+    # prem_league_scraped_data = data_extractor.scrape_data()
     
 
-    # Transform data 
-    data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
-    df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
-    print(df)
+    # # Transform data 
+    # data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
+    # df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
+    # print(df)
 
 
-    # Load data 
-    local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
-    local_data_uploader.upload_file(df, match_date=match_date)
+    # # Load data 
+    # local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
+    # local_data_uploader.upload_file(df, match_date=match_date)
 
 
-    # Close Selenium Chrome driver 
-    webpage_loader.chrome_driver.quit()
+    # # Close Selenium Chrome driver 
+    # webpage_loader.chrome_driver.quit()

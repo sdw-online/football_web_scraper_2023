@@ -76,14 +76,16 @@ The scraped data is transformed and read into a Pandas dataframe. Then a `match_
 
 ## Data Loader 
 
-The data is persisted to the target destination of choice (either locally or to the cloud), and can be saved in any available format - CSV is the only avaiable right now but there will be flexibility to add other options like JSON, text, parquet etc 
-
+The data is persisted to the target destination of choice (either locally or to the cloud), and can be saved in any available format - CSV is the only available right now but there will be flexibility to add other options like JSON, text, parquet etc 
 
 
 
 
 
 ## Lessons Learnt  📚
+
+
+
 
 
 
