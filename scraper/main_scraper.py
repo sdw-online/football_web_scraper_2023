@@ -19,9 +19,10 @@ from abc import ABC, abstractmethod
 
 # ================================================ LOGGER ================================================
 
-# Set up root root_logger 
+# Set up abstract base class for Logger that defines interface for logging events 
 class ILogger(ABC):
 
+    # Define abstract methods to be implemented in child classes
     @abstractmethod
     def log_event_as_debug(self, message: str):
         pass
@@ -43,19 +44,19 @@ class ILogger(ABC):
         pass
 
 
+# Set up a concrete FileLogger class that inherits from ILogger
 class FileLogger(ILogger):
     def __init__(self, local_filepath: str = Path(__file__).stem, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
-
         self.file_handler = logging.FileHandler('logs/scraper/' +  local_filepath + '.log', mode='w')
         self.file_handler.setLevel(level)
         self.formatter = logging.Formatter(log_format)
         self.file_handler.setFormatter(self.formatter)
-
         self.logger.addHandler(self.file_handler)
         
 
+    # Implement FileLogger methods to log events for different severity levels 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
 
@@ -72,9 +73,10 @@ class FileLogger(ILogger):
         self.logger.error(message)
 
 
-
+# Set up a concrete ConsoleLogger class that inherits from ILogger
 class ConsoleLogger(ILogger):
 
+    # Define abstract methods to be implemented in child classes
     @abstractmethod
     def log_event_as_debug(self, message: str):
         pass
@@ -96,6 +98,7 @@ class ConsoleLogger(ILogger):
         pass
 
 
+# Set up a concrete ColouredConsoleLogger class that inherits from ConsoleLogger 
 class ColouredConsoleLogger(ConsoleLogger):
     def __init__(self, coloured: bool =True, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
@@ -121,7 +124,7 @@ class ColouredConsoleLogger(ConsoleLogger):
             self.logger.addHandler(self.console_handler)
 
         
-
+    # Implement ColouredConsoleLogger methods to log events for different severity levels 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
         
@@ -139,15 +142,13 @@ class ColouredConsoleLogger(ConsoleLogger):
 
 
 
-
+# Set up a concrete NonColouredConsoleLogger class that inherits from ConsoleLogger  
 class NonColouredConsoleLogger(ConsoleLogger):
     def __init__(self, detailed_logs: bool= False, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
         self.console_handler = logging.StreamHandler()
-
         self.logger.addHandler(self.console_handler)
-
         self.detailed_logs = detailed_logs
         if self.detailed_logs:
             detailed_log_format: str='%(asctime)s | %(levelname)s | %(message)s'
@@ -159,6 +160,7 @@ class NonColouredConsoleLogger(ConsoleLogger):
             self.console_handler.setFormatter(self.console_formatter)
         
 
+    # Implement NonColouredConsoleLogger methods to log events for different severity levels 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
         
@@ -178,8 +180,7 @@ class NonColouredConsoleLogger(ConsoleLogger):
 # ================================================ CONFIG ================================================
 
 
-
-# Set up environment variables
+# Set up a class to enable external classes to access environment variables
 class Config:
     def __init__(self, WRITE_FILES_TO_CLOUD: bool = False):
         self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
@@ -199,17 +200,22 @@ class Config:
 
 # ================================================ WEBPAGE LOADER ================================================
 
+
+# Set up abstract base class for Webpage Loader that defines interface for webpage loaders
 class IWebPageLoader(ABC):
     @abstractmethod
     def load_page(self, url:str):
         pass
 
+
+# Set up a concrete WebPageLoader class that inherits from IWebPageLoader
 class WebPageLoader(IWebPageLoader):
     @abstractmethod
     def load_page(self, url:str):
         pass
 
 
+# Set up a concrete PremLeagueTableWebPageLoader class that inherits from WebPageLoader
 class PremLeagueTableWebPageLoader(WebPageLoader):
     def __init__(self, options=None, service=None, coloured_console_logs: bool=False):
         if options is None:
@@ -227,6 +233,7 @@ class PremLeagueTableWebPageLoader(WebPageLoader):
             self.console_logger = NonColouredConsoleLogger()
 
 
+    # Implement PremLeagueTableWebPageLoader method to load webpage in browser
     def load_page(self, url: str):
         webpage_title = 'Premier League'
         self.console_logger.log_event_as_debug(">>> Loading webpage using Selenium ...")
@@ -256,18 +263,21 @@ class Ligue1TableWebPageLoader(WebPageLoader):
 
 # ================================================ POPUP HANDLER ================================================
 
+# Set up abstract base class for PopUpHandler that defines interface for popup handlers
 class IPopUpHandler(ABC):
     @abstractmethod
     def close_popup(self):
         pass
 
 
+# Set up a concrete PopUpHandler class that inherits from IPopUpHandler
 class PopUpHandler(IPopUpHandler):
     @abstractmethod
     def close_popup(self):
         pass
 
 
+# Set up a concrete PremLeagueTablePopUpHandler class that inherits from PopUpHandler
 class PremLeagueTablePopUpHandler(PopUpHandler):
 
     def __init__(self, chrome_driver: webdriver.Chrome, logger: logging.Logger, coloured_console_logs: bool=False, file_logger=FileLogger()):
@@ -283,10 +293,8 @@ class PremLeagueTablePopUpHandler(PopUpHandler):
         self.logger = logger
         self.logger.propagate = True
         
-        
 
-    
-
+    # Implement PopUpHandler method for closing popup windows in browser
     def close_popup(self):
         try:
             wait = WebDriverWait(self.chrome_driver, 5)
@@ -316,19 +324,21 @@ class Ligue1TablePopUpHandler(PopUpHandler):
 
 # ================================================ DATA EXTRACTOR ================================================
 
+# Set up abstract base class for Data Extractor that defines interface for data extractors
 class IDataExtractor(ABC):
     @abstractmethod
     def scrape_data(self):
         pass
 
 
+# Set up a concrete TableStandingsDataExtractor class that inherits from IDataExtractor
 class TableStandingsDataExtractor(IDataExtractor):
     @abstractmethod
     def scrape_data(self):
         pass
 
 
-
+# Set up a concrete PremLeagueTableStandingsDataExtractor class that inherits from TableStandingsDataExtractor
 class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
     def __init__(self, chrome_driver: webdriver.Chrome, match_date: str, coloured_console_logs: bool=False, file_logger=FileLogger()):
@@ -341,6 +351,7 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
         else:
             self.console_logger = NonColouredConsoleLogger()
     
+    # Implement PremLeagueTableStandingsDataExtractor method for scraping data from webpage
     def scrape_data(self):
         try:
             table                   =   self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
@@ -390,14 +401,14 @@ class Ligue1TableStandingsDataExtractor(TableStandingsDataExtractor):
 
 # ================================================ DATA TRANSFORMER ================================================
 
-
+# Set up abstract base class for Data Transformer that defines interface for data transformers
 class IDataTransformer(ABC):
     @abstractmethod
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
-
+# Set up a concrete TableStandingsDataTransformer class that inherits from IDataTransformer
 class TableStandingsDataTransformer(IDataTransformer):
     @abstractmethod
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
@@ -405,7 +416,7 @@ class TableStandingsDataTransformer(IDataTransformer):
 
 
 
-
+# Set up a concrete PremierLeagueTableStandingsDataTransformer class that inherits from TableStandingsDataTransformer
 class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
     def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.file_logger = file_logger
@@ -415,16 +426,17 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
+
+    # Implement PremierLeagueTableStandingsDataTransformer method for transforming data  
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         try:
             self.file_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
-            
+        
             scraped_data            =   scraped_content[1:]
             scraped_columns         =   scraped_content[0]
 
             table_df                =   pd.DataFrame(data=scraped_data, columns=scraped_columns)
             table_df['match_date']  =   match_date
-
 
             self.file_logger.log_event_as_debug(f'>>>> Successfully transformed Premier League content...')
         except Exception as e:
