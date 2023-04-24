@@ -1,4 +1,4 @@
-# Football Scraper  
+# Football Scraper 🏟️⚽
 
 ## Introduction 🚀
 
@@ -15,7 +15,7 @@ This Python script scrapes from the [twtd.co.uk] website for a specified match d
 
 
 
-## Dependencies
+## Dependencies  🛠️
 
 Some of the modules used in this script include:
 
@@ -28,7 +28,7 @@ Some of the modules used in this script include:
 
 
 
-## Code blocks
+## Code blocks 🧱
 
 The script consists of the following code blocks:
 
@@ -49,7 +49,7 @@ Each code block is described below.
 This code block creates a logging system to log messages, warnings and errors to a file in the `log` folder 
 
 
-## Config 
+## Config ⚙️
 
 This instantiates the environment variables required to access, store and process the data during each stage of the workflow
 
@@ -59,22 +59,22 @@ This instantiates the environment variables required to access, store and proces
 This interface loads the webpage specified in the URL provided using a Chrome driver provided by Selenium. 
 
 
-## Popup Handler 
+## Popup Handler 🪟
 
 Any popup windows that appear in the browser is closed using the method in this class. 
 
 
-## Data Extractor 
+## Data Extractor 🧪
 
 This scrapes the football data from the HTML elements of the webpage using XPath selectors and stores the data as a list of lists.
 
 
-## Data Transformer 
+## Data Transformer 🔄
 
 The scraped data is transformed and read into a Pandas dataframe. Then a `match_date` column is added to the dataframe. 
 
 
-## Data Loader 
+## Data Loader 💾
 
 The data is persisted to the target destination of choice (either locally or to the cloud), and can be saved in any available format - CSV is the only available right now but there will be flexibility to add other options like JSON, text, parquet etc 
 
@@ -82,12 +82,23 @@ The data is persisted to the target destination of choice (either locally or to 
 
 
 
-## Lessons Learnt  📚
+## Lessons learnt/Future developments  📚
 
 
+With any software developed, no matter how much they behave as intended, there are always areas to improve upon. Here are some of the features I plan on adding later down the line: 
 
-
+* Exception handling - Plans to improve the exception handling and error logging process are in the roadmap
+* Additional file formats - future releases will support more file formats like JSON, parquet, text
+* Wider data handling capabilities -  later versions of this tool will include other data points to analyze such as top goal scorers, most assists, yellow/red cards per game, among others  
+* Consistent type-hint allocation - adding type hints consistently across the codebase would help in readability and understand what data is expected to be inserted into methods and they data type to be outputted 
 
 
 ## Conclusion 🏁
+
+If I wanted to add many more features to this tool, or even convert it into a production-grade application, SOLID principles give me the flexibility to manoeuvering in any direction I wish to take this to in ways other programming concepts may not be able to. 
+
+
+
+
+
 
