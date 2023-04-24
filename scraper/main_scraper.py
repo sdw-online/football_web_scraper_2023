@@ -463,37 +463,37 @@ class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
 
 # ================================================ DATA UPLOADER ================================================
 
-
+# Set up abstract base class for Data Loader that defines an interface for data uploaders
 class IFileUploader(ABC):
-
     @abstractmethod
     def upload_file(self):
         pass
 
 
-
+# Set up a concrete S3FileUploader class that inherits from IFileUploader
 class S3FileUploader(IFileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
+# Set up a concrete S3CSVFileUploader class that inherits from S3FileUploader
 class S3CSVFileUploader(S3FileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
-
+# Set up a concrete PremierLeagueTableS3CSVUploader class that inherits from S3CSVFileUploader
 class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
 
     def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger(), cfg: Config = Config(WRITE_FILES_TO_CLOUD=True)):
         self.cfg                    =   cfg
+        self.file_name_prefix: str  = 'prem_league_table'
         self.s3_client: str         =   self.cfg.S3_CLIENT
         self.s3_bucket: str         =   self.cfg._S3_BUCKET
         self.s3_folder: str         =   self.cfg._S3_FOLDER
         self.s3_region: str         =   self.cfg._S3_REGION
-
         self.file_logger            =   file_logger
         self.coloured_console_logs  =   coloured_console_logs
         if self.coloured_console_logs:
@@ -501,10 +501,9 @@ class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
-        self.file_name_prefix: str = 'prem_league_table'
 
 
-
+    # Implement PremierLeagueTableS3CSVUploader method for uploading CSV files into S3 bucket
     def upload_file(self, prem_league_df: pd.DataFrame, match_date: str):
 
         if self.cfg.WRITE_FILES_TO_CLOUD:
@@ -560,13 +559,14 @@ class S3JSONFileUploader(S3FileUploader):
 
 
 
-
+# Set up a concrete LocalFileUploader class that inherits from IFileUploader
 class LocalFileUploader(IFileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
+# Set up a concrete PremierLeagueTableLocalCSVUploader class that inherits from LocalFileUploader
 class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
     
     def __init__(self, target_path: str=None, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
@@ -584,6 +584,8 @@ class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
+
+   # Implement PremierLeagueTableLocalCSVUploader method for uploading CSV files into local machine
     def upload_file(self, prem_league_df: pd.DataFrame, match_date: str):
         try:
             self.console_logger.log_event_as_debug(f">>> Saving Prem League table file into local folder...")
@@ -623,6 +625,9 @@ class Ligue1TableLocalCSVUploader(LocalFileUploader):
 
 
 
+
+
+# Instantiate the classes in this script
 
 if __name__=="__main__":
 
@@ -664,13 +669,16 @@ if __name__=="__main__":
 
     # Load data 
     
+    
     if cfg.WRITE_FILES_TO_CLOUD:
 
+        # Upload files into S3 bucket if WRITE_FILES_TO_CLOUD flag is True
         cloud_data_uploader = PremierLeagueTableS3CSVUploader(coloured_console_logs=False, cfg=cfg)
         cloud_data_uploader.upload_file(df, match_date=match_date)
     
     else:
 
+        # Upload files into local machine if WRITE_FILES_TO_CLOUD flag is False
         local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
         local_data_uploader.upload_file(df, match_date=match_date)
 
