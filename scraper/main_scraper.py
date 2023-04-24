@@ -497,12 +497,34 @@ class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
 
         if self.cfg.WRITE_FILES_TO_CLOUD:
             try:
+                self.console_logger.log_event_as_debug(f">>> Saving Prem League table file into S3 folder ...")
+
                 S3_KEY = f"{self.s3_folder}/{self.file_name_prefix}_{match_date}.csv"
+
+                
+                self.console_logger.log_event_as_debug(f">>> Creating in-memory buffer ...")
+
+                
                 CSV_BUFFER = io.StringIO()
+
+                self.console_logger.log_event_as_debug(f">>> Persisting dataframe to CSV file ...")
+                
                 prem_league_df.to_csv(CSV_BUFFER, index=False)
+
+                
+                self.console_logger.log_event_as_debug(f">>> Retrieving data from CSV buffer & storing as string values ...")
+
                 RAW_TABLE_ROWS_AS_STRING_VALUES = CSV_BUFFER.getvalue()
 
+                print(f'S3 BUCKET: {self.s3_bucket} ')
+                print(f'S3 KEY: {S3_KEY} ')
+                print(f'Table rows as string: {RAW_TABLE_ROWS_AS_STRING_VALUES} ')
+
                 self.s3_client.put_object(Bucket=self.s3_bucket, Key=S3_KEY, Body=RAW_TABLE_ROWS_AS_STRING_VALUES)
+            
+                self.console_logger.log_event_as_debug(f"")
+                self.console_logger.log_event_as_debug(f">>> Successfully written and loaded '{self.file_name_prefix}' file to cloud target location in S3 bucket... ")
+                self.console_logger.log_event_as_debug(f"")
 
             except Exception as e:
                 self.console_logger.log_event_as_warning(e)
@@ -604,6 +626,7 @@ if __name__=="__main__":
 
     # Load environment variables to session
     load_dotenv()
+    cfg = Config(WRITE_FILES_TO_CLOUD=True)
 
     
 
@@ -638,7 +661,7 @@ if __name__=="__main__":
     # local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
     # local_data_uploader.upload_file(df, match_date=match_date)
 
-    cloud_data_uploader = PremierLeagueTableS3CSVUploader(coloured_console_logs=False)
+    cloud_data_uploader = PremierLeagueTableS3CSVUploader(coloured_console_logs=False, cfg=cfg)
     cloud_data_uploader.upload_file(df, match_date=match_date)
 
 
