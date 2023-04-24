@@ -90,7 +90,8 @@ With any software developed, no matter how much they behave as intended, there a
 * Exception handling - Plans to improve the exception handling and error logging process are in the roadmap
 * Additional file formats - future releases will support more file formats like JSON, parquet, text
 * Wider data handling capabilities -  later versions of this tool will include other data points to analyze such as top goal scorers, most assists, yellow/red cards per game, among others  
-* Consistent type-hint allocation - adding type hints consistently across the codebase would help in readability and understand what data is expected to be inserted into methods and they data type to be outputted 
+* Consistent type-hint allocation - adding type hints consistently across the codebase would help in making the script more readable for developers to understand what data is expected to be inserted into methods and the expected data type of each method's result
+* Orchestration - scheduling the scraping bot to execute at a specific time interval is a viable option in automating the football results each weekend  
 
 
 ## Conclusion 🏁
