@@ -633,7 +633,7 @@ if __name__=="__main__":
 
     # Specify the constants for the scraper
     local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-    match_date                      =   '2023-Apr-23'
+    match_date                      =   '2023-Apr-24'
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
@@ -656,20 +656,18 @@ if __name__=="__main__":
     popup_handler.close_popup()
 
 
-    # Extract data 
+    # Extract data (E)
     data_extractor = PremLeagueTableStandingsDataExtractor(chrome_driver=webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
     prem_league_scraped_data = data_extractor.scrape_data()
     
 
-    # Transform data 
+    # Transform data (T)
     data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
     df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
     print(df)
 
 
-    # Load data 
-    
-    
+    # Load data (L)
     if cfg.WRITE_FILES_TO_CLOUD:
 
         # Upload files into S3 bucket if WRITE_FILES_TO_CLOUD flag is True
