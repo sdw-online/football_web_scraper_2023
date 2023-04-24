@@ -87,11 +87,11 @@ The data is persisted to the target destination of choice (either locally or to 
 
 With any software developed, no matter how much they behave as intended, there are always areas to improve upon. Here are some of the features I plan on adding later down the line: 
 
-* Exception handling - Plans to improve the exception handling and error logging process are in the roadmap
-* Additional file formats - future releases will support more file formats like JSON, parquet, text
-* Wider data handling capabilities -  later versions of this tool will include other data points to analyze such as top goal scorers, most assists, yellow/red cards per game, among others  
-* Consistent type-hint allocation - adding type hints consistently across the codebase would help in making the script more readable for developers to understand what data is expected to be inserted into methods and the expected data type of each method's result
-* Orchestration - scheduling the scraping bot to execute at a specific time interval is a viable option in automating the football results each weekend  
+* **Exception handling** - Plans to improve the exception handling and error logging process are in the roadmap
+* **Additional file formats** - future releases will support more file formats like JSON, parquet, text
+* **Wider data handling capabilities** -  later versions of this tool will include other data points to analyze such as top goal scorers, most assists, yellow/red cards per game, among others  
+* **Consistent type-hint allocation** - adding type hints consistently across the codebase would help in making the script more readable for developers to understand what data is expected to be inserted into methods and the expected data type of each method's result
+* **Orchestration** - scheduling the scraping bot to execute at a specific time interval is a viable option in automating the football results each weekend  
 
 
 ## Conclusion 🏁
