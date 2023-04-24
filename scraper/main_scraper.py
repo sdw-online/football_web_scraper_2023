@@ -652,15 +652,17 @@ if __name__=="__main__":
 
     # Load data 
     
+    if cfg.WRITE_FILES_TO_CLOUD:
+
+        cloud_data_uploader = PremierLeagueTableS3CSVUploader(coloured_console_logs=False, cfg=cfg)
+        cloud_data_uploader.upload_file(df, match_date=match_date)
     
+    else:
 
-    # local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
-    # local_data_uploader.upload_file(df, match_date=match_date)
+        local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
+        local_data_uploader.upload_file(df, match_date=match_date)
 
-    cloud_data_uploader = PremierLeagueTableS3CSVUploader(coloured_console_logs=False, cfg=cfg)
-    cloud_data_uploader.upload_file(df, match_date=match_date)
-
-
+        
     # Close Selenium Chrome driver 
     webpage_loader.chrome_driver.quit()
     
