@@ -559,15 +559,22 @@ class S3JSONFileUploader(S3FileUploader):
 
 
 
-# Set up a concrete LocalFileUploader class that inherits from IFileUploader
+# Set up a LocalFileUploader class that inherits from IFileUploader
 class LocalFileUploader(IFileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
-# Set up a concrete PremierLeagueTableLocalCSVUploader class that inherits from LocalFileUploader
-class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
+# Set up a LocalCSVFileUploader class that inherits from LocalFileUploader
+class LocalCSVFileUploader(LocalFileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+# Set up a concrete PremierLeagueTableLocalCSVUploader class that inherits from LocalCSVFileUploader
+class PremierLeagueTableLocalCSVUploader(LocalCSVFileUploader):
     
     def __init__(self, target_path: str=None, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.cfg = Config()
