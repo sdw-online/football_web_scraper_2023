@@ -19,9 +19,10 @@ from abc import ABC, abstractmethod
 
 # ================================================ LOGGER ================================================
 
-# Set up root root_logger 
+# Set up abstract base class for Logger that defines interface for logging events 
 class ILogger(ABC):
 
+    # Define abstract methods to be implemented in child classes
     @abstractmethod
     def log_event_as_debug(self, message: str):
         pass
@@ -43,19 +44,19 @@ class ILogger(ABC):
         pass
 
 
+# Set up a concrete FileLogger class that inherits from ILogger
 class FileLogger(ILogger):
     def __init__(self, local_filepath: str = Path(__file__).stem, log_format: str='%(asctime)s | %(levelname)s | %(message)s', level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
-
         self.file_handler = logging.FileHandler('logs/scraper/' +  local_filepath + '.log', mode='w')
         self.file_handler.setLevel(level)
         self.formatter = logging.Formatter(log_format)
         self.file_handler.setFormatter(self.formatter)
-
         self.logger.addHandler(self.file_handler)
         
 
+    # Implement FileLogger methods to log events for different severity levels 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
 
@@ -72,9 +73,10 @@ class FileLogger(ILogger):
         self.logger.error(message)
 
 
-
+# Set up a concrete ConsoleLogger class that inherits from ILogger
 class ConsoleLogger(ILogger):
 
+    # Define abstract methods to be implemented in child classes
     @abstractmethod
     def log_event_as_debug(self, message: str):
         pass
@@ -96,6 +98,7 @@ class ConsoleLogger(ILogger):
         pass
 
 
+# Set up a concrete ColouredConsoleLogger class that inherits from ConsoleLogger 
 class ColouredConsoleLogger(ConsoleLogger):
     def __init__(self, coloured: bool =True, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
@@ -121,7 +124,7 @@ class ColouredConsoleLogger(ConsoleLogger):
             self.logger.addHandler(self.console_handler)
 
         
-
+    # Implement ColouredConsoleLogger methods to log events for different severity levels 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
         
@@ -139,15 +142,13 @@ class ColouredConsoleLogger(ConsoleLogger):
 
 
 
-
+# Set up a concrete NonColouredConsoleLogger class that inherits from ConsoleLogger  
 class NonColouredConsoleLogger(ConsoleLogger):
     def __init__(self, detailed_logs: bool= False, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
         self.console_handler = logging.StreamHandler()
-
         self.logger.addHandler(self.console_handler)
-
         self.detailed_logs = detailed_logs
         if self.detailed_logs:
             detailed_log_format: str='%(asctime)s | %(levelname)s | %(message)s'
@@ -159,6 +160,7 @@ class NonColouredConsoleLogger(ConsoleLogger):
             self.console_handler.setFormatter(self.console_formatter)
         
 
+    # Implement NonColouredConsoleLogger methods to log events for different severity levels 
     def log_event_as_debug(self, message: str):
         self.logger.debug(message)
         
@@ -178,8 +180,7 @@ class NonColouredConsoleLogger(ConsoleLogger):
 # ================================================ CONFIG ================================================
 
 
-
-# Set up environment variables
+# Set up a class to enable external classes to access environment variables
 class Config:
     def __init__(self, WRITE_FILES_TO_CLOUD: bool = False):
         self._AWS_ACCESS_KEY             =   os.getenv("ACCESS_KEY")
@@ -199,17 +200,22 @@ class Config:
 
 # ================================================ WEBPAGE LOADER ================================================
 
+
+# Set up abstract base class for Webpage Loader that defines interface for webpage loaders
 class IWebPageLoader(ABC):
     @abstractmethod
     def load_page(self, url:str):
         pass
 
+
+# Set up a concrete WebPageLoader class that inherits from IWebPageLoader
 class WebPageLoader(IWebPageLoader):
     @abstractmethod
     def load_page(self, url:str):
         pass
 
 
+# Set up a concrete PremLeagueTableWebPageLoader class that inherits from WebPageLoader
 class PremLeagueTableWebPageLoader(WebPageLoader):
     def __init__(self, options=None, service=None, coloured_console_logs: bool=False):
         if options is None:
@@ -227,6 +233,7 @@ class PremLeagueTableWebPageLoader(WebPageLoader):
             self.console_logger = NonColouredConsoleLogger()
 
 
+    # Implement PremLeagueTableWebPageLoader method to load webpage in browser
     def load_page(self, url: str):
         webpage_title = 'Premier League'
         self.console_logger.log_event_as_debug(">>> Loading webpage using Selenium ...")
@@ -256,18 +263,21 @@ class Ligue1TableWebPageLoader(WebPageLoader):
 
 # ================================================ POPUP HANDLER ================================================
 
+# Set up abstract base class for PopUpHandler that defines interface for popup handlers
 class IPopUpHandler(ABC):
     @abstractmethod
     def close_popup(self):
         pass
 
 
+# Set up a concrete PopUpHandler class that inherits from IPopUpHandler
 class PopUpHandler(IPopUpHandler):
     @abstractmethod
     def close_popup(self):
         pass
 
 
+# Set up a concrete PremLeagueTablePopUpHandler class that inherits from PopUpHandler
 class PremLeagueTablePopUpHandler(PopUpHandler):
 
     def __init__(self, chrome_driver: webdriver.Chrome, logger: logging.Logger, coloured_console_logs: bool=False, file_logger=FileLogger()):
@@ -283,10 +293,8 @@ class PremLeagueTablePopUpHandler(PopUpHandler):
         self.logger = logger
         self.logger.propagate = True
         
-        
 
-    
-
+    # Implement PopUpHandler method for closing popup windows in browser
     def close_popup(self):
         try:
             wait = WebDriverWait(self.chrome_driver, 5)
@@ -316,19 +324,21 @@ class Ligue1TablePopUpHandler(PopUpHandler):
 
 # ================================================ DATA EXTRACTOR ================================================
 
+# Set up abstract base class for Data Extractor that defines interface for data extractors
 class IDataExtractor(ABC):
     @abstractmethod
     def scrape_data(self):
         pass
 
 
+# Set up a concrete TableStandingsDataExtractor class that inherits from IDataExtractor
 class TableStandingsDataExtractor(IDataExtractor):
     @abstractmethod
     def scrape_data(self):
         pass
 
 
-
+# Set up a concrete PremLeagueTableStandingsDataExtractor class that inherits from TableStandingsDataExtractor
 class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
 
     def __init__(self, chrome_driver: webdriver.Chrome, match_date: str, coloured_console_logs: bool=False, file_logger=FileLogger()):
@@ -341,6 +351,7 @@ class PremLeagueTableStandingsDataExtractor(TableStandingsDataExtractor):
         else:
             self.console_logger = NonColouredConsoleLogger()
     
+    # Implement PremLeagueTableStandingsDataExtractor method for scraping data from webpage
     def scrape_data(self):
         try:
             table                   =   self.chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
@@ -390,14 +401,14 @@ class Ligue1TableStandingsDataExtractor(TableStandingsDataExtractor):
 
 # ================================================ DATA TRANSFORMER ================================================
 
-
+# Set up abstract base class for Data Transformer that defines interface for data transformers
 class IDataTransformer(ABC):
     @abstractmethod
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         pass
 
 
-
+# Set up a concrete TableStandingsDataTransformer class that inherits from IDataTransformer
 class TableStandingsDataTransformer(IDataTransformer):
     @abstractmethod
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
@@ -405,7 +416,7 @@ class TableStandingsDataTransformer(IDataTransformer):
 
 
 
-
+# Set up a concrete PremierLeagueTableStandingsDataTransformer class that inherits from TableStandingsDataTransformer
 class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
     def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.file_logger = file_logger
@@ -415,16 +426,17 @@ class PremierLeagueTableStandingsDataTransformer(TableStandingsDataTransformer):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
+
+    # Implement PremierLeagueTableStandingsDataTransformer method for transforming data  
     def transform_data(self, scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
         try:
             self.file_logger.log_event_as_debug(f'>>>> Transforming scraped Premier League content...')
-            
+        
             scraped_data            =   scraped_content[1:]
             scraped_columns         =   scraped_content[0]
 
             table_df                =   pd.DataFrame(data=scraped_data, columns=scraped_columns)
             table_df['match_date']  =   match_date
-
 
             self.file_logger.log_event_as_debug(f'>>>> Successfully transformed Premier League content...')
         except Exception as e:
@@ -451,37 +463,37 @@ class Ligue1TableStandingsDataTransformer(TableStandingsDataTransformer):
 
 # ================================================ DATA UPLOADER ================================================
 
-
+# Set up abstract base class for Data Loader that defines an interface for data uploaders
 class IFileUploader(ABC):
-
     @abstractmethod
     def upload_file(self):
         pass
 
 
-
+# Set up a concrete S3FileUploader class that inherits from IFileUploader
 class S3FileUploader(IFileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
+# Set up a concrete S3CSVFileUploader class that inherits from S3FileUploader
 class S3CSVFileUploader(S3FileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
-
+# Set up a concrete PremierLeagueTableS3CSVUploader class that inherits from S3CSVFileUploader
 class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
 
     def __init__(self, coloured_console_logs: bool=False, file_logger=FileLogger(), cfg: Config = Config(WRITE_FILES_TO_CLOUD=True)):
         self.cfg                    =   cfg
+        self.file_name_prefix: str  = 'prem_league_table'
         self.s3_client: str         =   self.cfg.S3_CLIENT
         self.s3_bucket: str         =   self.cfg._S3_BUCKET
         self.s3_folder: str         =   self.cfg._S3_FOLDER
         self.s3_region: str         =   self.cfg._S3_REGION
-
         self.file_logger            =   file_logger
         self.coloured_console_logs  =   coloured_console_logs
         if self.coloured_console_logs:
@@ -489,10 +501,9 @@ class PremierLeagueTableS3CSVUploader(S3CSVFileUploader):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
-        self.file_name_prefix: str = 'prem_league_table'
 
 
-
+    # Implement PremierLeagueTableS3CSVUploader method for uploading CSV files into S3 bucket
     def upload_file(self, prem_league_df: pd.DataFrame, match_date: str):
 
         if self.cfg.WRITE_FILES_TO_CLOUD:
@@ -548,14 +559,22 @@ class S3JSONFileUploader(S3FileUploader):
 
 
 
-
+# Set up a LocalFileUploader class that inherits from IFileUploader
 class LocalFileUploader(IFileUploader):
     @abstractmethod
     def upload_file(self):
         pass
 
 
-class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
+# Set up a LocalCSVFileUploader class that inherits from LocalFileUploader
+class LocalCSVFileUploader(LocalFileUploader):
+    @abstractmethod
+    def upload_file(self):
+        pass
+
+
+# Set up a concrete PremierLeagueTableLocalCSVUploader class that inherits from LocalCSVFileUploader
+class PremierLeagueTableLocalCSVUploader(LocalCSVFileUploader):
     
     def __init__(self, target_path: str=None, file_name: str='prem_league_table', coloured_console_logs: bool=False, file_logger=FileLogger()):
         self.cfg = Config()
@@ -572,6 +591,8 @@ class PremierLeagueTableLocalCSVUploader(LocalFileUploader):
         else:
             self.console_logger = NonColouredConsoleLogger()
 
+
+   # Implement PremierLeagueTableLocalCSVUploader method for uploading CSV files into local machine
     def upload_file(self, prem_league_df: pd.DataFrame, match_date: str):
         try:
             self.console_logger.log_event_as_debug(f">>> Saving Prem League table file into local folder...")
@@ -612,11 +633,14 @@ class Ligue1TableLocalCSVUploader(LocalFileUploader):
 
 
 
+
+# Instantiate the classes in this script
+
 if __name__=="__main__":
 
     # Specify the constants for the scraper
     local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-    match_date                      =   '2023-Apr-23'
+    match_date                      =   '2023-Apr-24'
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
@@ -639,26 +663,27 @@ if __name__=="__main__":
     popup_handler.close_popup()
 
 
-    # Extract data 
+    # Extract data (E)
     data_extractor = PremLeagueTableStandingsDataExtractor(chrome_driver=webpage_loader.chrome_driver, match_date=match_date, coloured_console_logs=False)
     prem_league_scraped_data = data_extractor.scrape_data()
     
 
-    # Transform data 
+    # Transform data (T)
     data_transformer = PremierLeagueTableStandingsDataTransformer(coloured_console_logs=False)
     df = data_transformer.transform_data(scraped_content=prem_league_scraped_data, match_date=match_date)
     print(df)
 
 
-    # Load data 
-    
+    # Load data (L)
     if cfg.WRITE_FILES_TO_CLOUD:
 
+        # Upload files into S3 bucket if WRITE_FILES_TO_CLOUD flag is True
         cloud_data_uploader = PremierLeagueTableS3CSVUploader(coloured_console_logs=False, cfg=cfg)
         cloud_data_uploader.upload_file(df, match_date=match_date)
     
     else:
 
+        # Upload files into local machine if WRITE_FILES_TO_CLOUD flag is False
         local_data_uploader = PremierLeagueTableLocalCSVUploader(coloured_console_logs=False)
         local_data_uploader.upload_file(df, match_date=match_date)
 
