@@ -23,117 +23,88 @@ from abc import ABC, abstractmethod
 # Set up functions for logging events 
 
 
-def create_file_handler(local_filepath: str=Path(__file__).stem, level=logging.DEBUG):
-    file_handler = logging.FileHandler('logs/scraper' + local_filepath + '.log', mode='w')
+def create_logger(name, level=logging.DEBUG):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    return logger
+
+
+def create_file_handler(local_filepath, level=logging.DEBUG, log_format='%(asctime)s | %(levelname)s | %(message)s'):
+    file_handler = logging.FileHandler('logs/scraper/' + local_filepath + '.log', mode='w')
     file_handler.setLevel(level)
+    formatter = logging.Formatter(log_format)
+    file_handler.setFormatter(formatter)
     return file_handler
 
 
-def set_file_formatter(file_handler, log_format: str='%(asctime)s | %(levelname)s | %(message)s' ):
-    file_formatter = logging.Formatter(log_format)
-    file_handler.setFormatter(file_formatter)
-
-
-
-
-def create_console_handler(level=logging.DEBUG):
+def create_console_handler(colored=True, level=logging.DEBUG, detailed_logs=False):
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(level)
-    return console_handler
-
-
-def set_coloured_formatter(console_handler):
-    console_formatter = coloredlogs.ColoredFormatter(
-        fmt='%(message)s',
-        level_styles=dict(
+    
+    if colored:
+        console_formatter = coloredlogs.ColoredFormatter(fmt='%(message)s', level_styles=dict(
             debug=dict(color='white'),
             info=dict(color='green'),
             warning=dict(color='cyan'),
             error=dict(color='red', bold=True, bright=True),
             critical=dict(color='black', bold=True, background='red')
         ),
-        field_styles=dict(
+            field_styles=dict(
             messages=dict(color='white')
         )
-    )
-    console_handler.setFormatter(console_formatter)
-    coloredlogs.install(level=console_handler.level)
-
-    return console_handler
-
-
-def set_console_formatter(console_handler, detailed_logs=False):
-    if detailed_logs:
-        console_formatter = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s')
+        )
+        coloredlogs.install(level=level)
     else:
-        console_formatter = logging.Formatter('%(message)s')
-    console_handler.setFormatter(console_formatter)
-
-
-def create_logger(level=logging.DEBUG, coloured=True, detailed_logs=False):
-    logger = logging.getLogger(__name__)
-    logger.setLevel(level)
-    console_handler = create_console_handler(level)
-
-    if coloured:
-        set_coloured_formatter(console_handler)
-    else:
-        set_console_formatter(console_handler, detailed_logs)
-
-    logger.addHandler(console_handler)
+        if detailed_logs:
+            detailed_log_format = '%(asctime)s | %(levelname)s | %(message)s'
+            console_formatter = logging.Formatter(detailed_log_format)
+        else:
+            simple_log_format = '%(message)s'
+            console_formatter = logging.Formatter(simple_log_format)
     
-    return logger
-
-
-# def log_event(logger, level, message):
-#     logger.log(level, message)
+    console_handler.setFormatter(console_formatter)
+    return console_handler
 
 
 def log_event(logger, message, **kwargs):
     level = kwargs.get('level', logging.INFO)
+    logger.log(level, message)
 
 
 
 
 
 
-log_event_as_debug      =   partial(log_event, level=logging.DEBUG)
-log_event_as_info       =   partial(log_event, level=logging.INFO)
-log_event_as_warning    =   partial(log_event, level=logging.WARNING)
-log_event_as_critical   =   partial(log_event, level=logging.CRITICAL)
-log_event_as_error      =   partial(log_event, level=logging.ERROR)
     
 
-
-
-
-
-
-
-# # ================================================ CONFIG ================================================
 
 
 
 
 def main():
-    # # Specify the constants for the scraper
-    # local_target_path               =   os.path.abspath('temp_storage/dirty_data')
-    # match_date                      =   '2023-Apr-24'
-    # football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
+
+    logger_name         =   __name__
+    local_filepath      =   'main_scraper'
+    log_level           =   logging.DEBUG
+
+    logger              =   create_logger(logger_name, log_level)
+    file_handler        =   create_file_handler(local_filepath, log_level)
+    console_handler     =   create_console_handler(colored=False, level=log_level, detailed_logs=False)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+
+    log_event_as_debug      =   partial(log_event, logger, level=logging.DEBUG)
+    log_event_as_info       =   partial(log_event, logger, level=logging.INFO)
+    log_event_as_warning    =   partial(log_event, logger, level=logging.WARNING)
+    log_event_as_critical   =   partial(log_event, logger, level=logging.CRITICAL)
+    log_event_as_error      =   partial(log_event, logger, level=logging.ERROR)
 
 
-    logger_name = __name__
-    logger_level = logging.DEBUG
-    
-
-
-    logger = create_logger(level=logger_level, coloured=False, detailed_logs=False)
-
-
-    print_debug = partial(log_event_as_debug, logger)
-
-    print_debug("This is a test message!!!!")
-
+    log_event_as_debug("This is debug message")
+    log_event_as_info("This is info message")
+    log_event_as_warning("This is warning message")
+    log_event_as_critical("This is critical message")
+    log_event_as_error("This is error message")
 
 
 
@@ -142,10 +113,7 @@ def main():
 # Instantiate the classes in this script
 
 if __name__=="__main__":
-
     # ---------------------------------------- TEST ----------------------------------------  
-
     # Test the logging operation works as expected
 
-    
     main()
