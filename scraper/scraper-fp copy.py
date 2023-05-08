@@ -1,7 +1,7 @@
 import io
 import os
 import boto3
-from typing import List
+from typing import List, Optional, Any
 import pandas as pd
 from time import sleep
 from pathlib import Path
@@ -74,14 +74,40 @@ def log_event(logger, message, **kwargs):
 
 
 
+# ================================================ CONFIG ================================================
+
+def create_config(aws_access_key: str, aws_secret_key: str, aws_region_name: str, aws_s3_bucket: str, aws_s3_folder: str, local_target_path: str, WRITE_FILES_TO_CLOUD: bool = False, s3_client: Optional[Any]=None) -> dict:
+    if s3_client is None:
+        s3_client = boto3.client(
+            "s3",
+            aws_access_key_id       =   aws_access_key,
+            aws_secret_access_key   =   aws_secret_key,
+            region_name             =   aws_region_name
+        )
+    
+    config = {
+        "AWS_ACCESS_KEY":           aws_access_key,
+        "AWS_SECRET_KEY":           aws_secret_key,
+        "S3_REGION":                aws_region_name,
+        "S3_BUCKET":                aws_s3_bucket,
+        "S3_FOLDER":                aws_s3_folder,
+        "LOCAL_TARGET_PATH":        local_target_path,
+        "S3_CLIENT":                s3_client,
+        "WRITE_FILES_TO_CLOUD":     WRITE_FILES_TO_CLOUD,
+    }
+    
+    return config
+    
     
 
 
 
 
+# Initialize the functions 
 
 def main():
 
+    # ================================================ LOGGER ================================================
     logger_name         =   __name__
     local_filepath      =   'main_scraper'
     log_level           =   logging.DEBUG
@@ -99,12 +125,28 @@ def main():
     log_event_as_critical   =   partial(log_event, logger, level=logging.CRITICAL)
     log_event_as_error      =   partial(log_event, logger, level=logging.ERROR)
 
-
     log_event_as_debug("This is debug message")
     log_event_as_info("This is info message")
     log_event_as_warning("This is warning message")
     log_event_as_critical("This is critical message")
     log_event_as_error("This is error message")
+
+
+
+# ================================================ CONFIG ================================================
+
+    
+    aws_access_key          =   os.getenv("AWS_ACCESS_KEY")
+    aws_secret_key          =   os.getenv("AWS_SECRET_KEY")
+    aws_region_name         =   os.getenv("S3_REGION") 
+    aws_s3_bucket           =   os.getenv("S3_BUCKET") 
+    aws_s3_folder           =   os.getenv("S3_FOLDER") 
+    local_target_path       =   os.getenv("LOCAL_TARGET_PATH") 
+
+    config = create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, WRITE_FILES_TO_CLOUD=False)
+
+
+
 
 
 
