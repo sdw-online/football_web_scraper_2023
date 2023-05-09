@@ -162,27 +162,27 @@ def close_popup_box_for_prem_league_table_webpage(chrome_driver: webdriver.Chrom
 # ================================================ DATA EXTRACTOR ================================================
 
 
-def extract_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[Any]:
+def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[Any]:
     try:
         return chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
     except Exception as e:
         log_event(logger, logging.ERROR, e)
         return None
 
-def extract_table_rows(table) -> Optional[Any]:
+def scrape_table_rows(table) -> Optional[Any]:
     return table.find_elements(By.XPATH, './/tr') if table else []
 
-def extract_data_from_cells(table_row):
+def scrape_data_from_cells(table_row):
     cells = table_row.find_elements(By.TAG_NAME, 'td')
     return [cell.text for cell in cells]
 
-def extract_data_from_rows(table_rows):
-    return [extract_data_from_cells(table_row) for table_row in table_rows ]
+def scrape_data_from_rows(table_rows):
+    return [scrape_data_from_cells(table_row) for table_row in table_rows ]
 
-def scrape_data(chrome_driver: webdriver.Chrome, logger):
-    prem_league_table   =   extract_table_standings(chrome_driver, logger)
-    table_rows          =   extract_table_rows(prem_league_table)
-    return extract_data_from_rows(table_rows)
+def extract_data(chrome_driver: webdriver.Chrome, logger):
+    prem_league_table   =   scrape_table_standings(chrome_driver, logger)
+    table_rows          =   scrape_table_rows(prem_league_table)
+    return scrape_data_from_rows(table_rows)
 
 
 
@@ -209,6 +209,65 @@ def transform_data(scraped_content: List[List[str]], match_date: str) -> pd.Data
 
 
 
+# A. UPLOAD TO CLOUD
+
+def create_s3_key(s3_folder, file_name, match_date):
+    return f"{s3_folder}/{file_name}_{match_date}.csv"
+
+
+def create_csv_buffer():
+    return io.StringIO()
+
+def write_df_to_csv(df, csv_buffer):
+    df.to_csv(csv_buffer, index=False)
+
+
+def get_string_values_from_buffer(csv_buffer):
+    return csv_buffer.get_value()
+
+def upload_string_to_s3(s3_client, s3_bucket, s3_key, string_values):
+    s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=string_values)
+
+
+
+def upload_df_to_s3(df, match_date, file_name, config, logger):
+    try:
+        s3_key          =   create_s3_key(config["S3_FOLDER"], file_name, match_date)
+        csv_buffer      =   create_csv_buffer()
+        write_df_to_csv(df, csv_buffer)
+        string_values   =   get_string_values_from_buffer(csv_buffer)
+        upload_string_to_s3(config["S3_CLIENT"], config["S3_BUCKET"], s3_key, string_values)
+        log_event(logger, logging.DEBUG, f">>> Successfully written and loaded '{file_name}' file to cloud target location in S3 bucket... ")
+    
+    except Exception as e:
+        log_event(logger, logging.ERROR, e)
+    
+
+
+
+
+# B. UPLOAD TO LOCAL MACHINE
+
+def create_local_file_path(target_path, file_name, match_date):
+    return f"{target_path}/{file_name}_{match_date}.csv"
+
+
+def write_df_to_local_file(df, file_path):
+    df.to_csv(file_path, index=False)
+
+
+def upload_df_to_local_file(df, match_date, file_name, config, logger):
+    try:
+        file_path = create_local_file_path(config["LOCAL_TARGET_PATH"], file_name, match_date)
+        write_df_to_local_file(df, file_path)
+        log_event(logger, logging.DEBUG, f">>> Successfully written and loaded '{file_name}' file to local target location... ")
+    except Exception as e:
+        log_event(logger, logging.error, e)
+
+
+
+
+
 
 
 
@@ -226,15 +285,14 @@ def main():
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
-    # ================================================ LOGGER ================================================
+
+    # Set up logging to file and console
     logger_name         =   __name__
     local_filepath      =   'main_scraper'
     log_level           =   logging.DEBUG
-
     logger              =   create_logger(logger_name, log_level)
     file_handler        =   create_file_handler(local_filepath, log_level)
     console_handler     =   create_console_handler(colored=False, level=log_level, detailed_logs=False) 
-
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
@@ -252,7 +310,8 @@ def main():
 
 
 
-# ================================================ CONFIG ================================================
+
+    # Set up credentials for configuration 
 
     aws_access_key          =   os.getenv("AWS_ACCESS_KEY")
     aws_secret_key          =   os.getenv("AWS_SECRET_KEY")
@@ -260,23 +319,34 @@ def main():
     aws_s3_bucket           =   os.getenv("S3_BUCKET") 
     aws_s3_folder           =   os.getenv("S3_FOLDER") 
     local_target_path       =   os.getenv("LOCAL_TARGET_PATH") 
-
-    config = create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, WRITE_FILES_TO_CLOUD=False)
-
+    config                  =   create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, WRITE_FILES_TO_CLOUD=False)
 
 
 
-# ================================================ WEBPAGE LOADER ================================================
-
+    # Set up Selenium Chrome driver and configuration settings  
     chrome_driver = load_prem_league_table_webpage(football_url, logger)
+
+
+
+    # Close popup box on webpage
     close_popup_box_for_prem_league_table_webpage(chrome_driver, logger)
 
 
+    # Begin web scraping
+    scraped_content          =   extract_data(chrome_driver, logger)
+    
 
-    scraped_content     =   scrape_data(chrome_driver, logger)
-    dataframe           =   transform_data(scraped_content, match_date)
+    # Transform data
+    prem_league_df           =   transform_data(scraped_content, match_date)
 
 
+    # Upload data 
+    file_name = "prem_league_table"
+    upload_df_to_local_file(prem_league_df, match_date, file_name, config, logger)
+
+
+
+    # Close driver when scraping is completed 
     chrome_driver.quit()
 
 
