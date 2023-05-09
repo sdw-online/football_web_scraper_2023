@@ -159,6 +159,55 @@ def close_popup_box_for_prem_league_table_webpage(chrome_driver: webdriver.Chrom
 
 
 
+# ================================================ DATA EXTRACTOR ================================================
+
+
+def extract_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[Any]:
+    try:
+        return chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
+    except Exception as e:
+        log_event(logger, logging.ERROR, e)
+        return None
+
+def extract_table_rows(table) -> Optional[Any]:
+    return table.find_elements(By.XPATH, './/tr') if table else []
+
+def extract_data_from_cells(table_row):
+    cells = table_row.find_elements(By.TAG_NAME, 'td')
+    return [cell.text for cell in cells]
+
+def extract_data_from_rows(table_rows):
+    return [extract_data_from_cells(table_row) for table_row in table_rows ]
+
+def scrape_data(chrome_driver: webdriver.Chrome, logger):
+    prem_league_table   =   extract_table_standings(chrome_driver, logger)
+    table_rows          =   extract_table_rows(prem_league_table)
+    return extract_data_from_rows(table_rows)
+
+
+
+
+# ================================================ DATA TRANSFORMER ================================================
+
+
+def create_dataframe(scraped_data, scraped_columns, match_date):
+    table_df = pd.DataFrame(data=scraped_data, columns=scraped_columns)
+    table_df['match_date'] = match_date
+    return table_df
+
+
+def transform_data(scraped_content: List[List[str]], match_date: str) -> pd.DataFrame:
+    scraped_data = scraped_content[1:]
+    scraped_columns = scraped_content[0]
+    return create_dataframe(scraped_data, scraped_columns, match_date)
+
+
+    
+    
+
+
+
+
 
 
 
@@ -172,6 +221,7 @@ def main():
 
     match_date                      =   '2023-May-09'
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
+
 
     # ================================================ LOGGER ================================================
     logger_name         =   __name__
@@ -219,6 +269,9 @@ def main():
     close_popup_box_for_prem_league_table_webpage(chrome_driver, logger)
 
 
+
+    scraped_content     =   scrape_data(chrome_driver, logger)
+    dataframe           =   transform_data(scraped_content, match_date)
 
 
     chrome_driver.quit()
