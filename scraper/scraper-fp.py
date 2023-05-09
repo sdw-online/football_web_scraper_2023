@@ -1,21 +1,21 @@
 import io
 import os
 import boto3
-from typing import List, Optional, Any
 import pandas as pd
 from time import sleep
 from pathlib import Path
 import logging, coloredlogs
+from datetime import datetime
 from functools import partial
 from dotenv import load_dotenv
 from selenium import webdriver
+from typing import List, Optional, Any
 from selenium.webdriver.common.by import By
-from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support import expected_conditions as EC
-from abc import ABC, abstractmethod
 
 
 
@@ -231,15 +231,12 @@ def transform_data(scraped_content: List[List[str]], match_date: str, logger: lo
 # ================================================ DATA UPLOADER ================================================
 
 
-
 # A. UPLOAD TO CLOUD
 
 def create_s3_key(s3_folder, file_name, match_date, logger: logging.Logger):
     try:
         log_event(logger, logging.DEBUG, '>>>> Creating S3 key for Prem League table file ...')
         s3_key = f"{s3_folder}/{file_name}_{match_date}.csv"
-        print(f'S3 FOLDER: {s3_folder}')
-        print(f'S3 KEY: {s3_key} ')
         return s3_key
     
     except Exception as e:
@@ -260,9 +257,7 @@ def create_csv_buffer(logger: logging.Logger):
 def write_df_to_csv(df, csv_buffer, logger: logging.Logger):
     try:
         log_event(logger, logging.DEBUG, f">>> Persisting dataframe to CSV file ...")
-        print(f'Dataframe: {df} ')
         df.to_csv(csv_buffer, index=False)
-        print(f'CSV BUFFER (1): {csv_buffer} ')
 
     except Exception as e:
         log_event(logger, logging.ERROR, e)
@@ -272,8 +267,6 @@ def write_df_to_csv(df, csv_buffer, logger: logging.Logger):
 def get_string_values_from_buffer(csv_buffer, logger: logging.Logger):
     try:
         log_event(logger, logging.DEBUG, f">>> Retrieving data from CSV buffer & storing as string values ...")
-        print(f'CSV BUFFER (2): {csv_buffer} ')
-        print(f'OTHER: {csv_buffer.getvalue()}   ')
         return csv_buffer.getvalue()
     
     except Exception as e:
@@ -283,9 +276,6 @@ def get_string_values_from_buffer(csv_buffer, logger: logging.Logger):
 def upload_string_to_s3(s3_client, s3_bucket, s3_key, string_values, logger: logging.Logger):
     try:
         log_event(logger, logging.DEBUG, f">>> Preparing to upload file to S3 bucket ...")
-        print(f'S3 CLIENT: {s3_client} ')
-        print(f'S3 BUCKET: {s3_bucket} ')
-        print(f'STRING VALUES (1): {string_values} ')
         s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=string_values)
 
     except Exception as e:
@@ -300,7 +290,6 @@ def upload_df_to_s3(df, match_date, file_name, config, logger):
         CSV_BUFFER                          =   create_csv_buffer(logger)
         write_df_to_csv(df, CSV_BUFFER, logger)
         RAW_TABLE_ROWS_AS_STRING_VALUES     =   get_string_values_from_buffer(CSV_BUFFER, logger)
-        print(f'STRING VALUES (2): {RAW_TABLE_ROWS_AS_STRING_VALUES} ')
         
         try:
             upload_string_to_s3(s3_client=config["S3_CLIENT"], s3_bucket=config["S3_BUCKET"], s3_key=S3_KEY, string_values=RAW_TABLE_ROWS_AS_STRING_VALUES, logger=logger)
@@ -366,13 +355,14 @@ def upload_df_to_local_file(df, match_date, file_name, config, logger: logging.L
 
 def main():
 
-    match_date                      =   '2023-May-09'
+    
+    match_date                      =   datetime.now().strftime('%Y-%b-%d') # for today's date
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
 
 
     # Set up logging to file and console
-    logger_name         =   __name__
+    logger_name         =   "football_scraper_fp"
     local_filepath      =   'main_scraper'
     log_level           =   logging.DEBUG
     logger              =   create_logger(logger_name, log_level)
@@ -381,25 +371,12 @@ def main():
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
-    log_event_as_debug      =   partial(log_event, logger, level=logging.DEBUG)
-    log_event_as_info       =   partial(log_event, logger, level=logging.INFO)
-    log_event_as_warning    =   partial(log_event, logger, level=logging.WARNING)
-    log_event_as_critical   =   partial(log_event, logger, level=logging.CRITICAL)
-    log_event_as_error      =   partial(log_event, logger, level=logging.ERROR)
-
-    # log_event_as_debug("This is debug message")
-    # log_event_as_info("This is info message")
-    # log_event_as_warning("This is warning message")
-    # log_event_as_critical("This is critical message")
-    # log_event_as_error("This is error message")
-
-
 
 
     # Set up credentials for configuration 
 
     load_dotenv()
-    
+
     aws_access_key          =   os.getenv("AWS_ACCESS_KEY")
     aws_secret_key          =   os.getenv("AWS_SECRET_KEY")
     aws_region_name         =   os.getenv("S3_REGION") 
@@ -407,7 +384,7 @@ def main():
     aws_s3_folder           =   os.getenv("S3_FOLDER") 
     local_target_path       =   os.getenv("LOCAL_TARGET_PATH") 
     config                  =   create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, WRITE_FILES_TO_CLOUD=False)
-    
+
 
 
 
@@ -420,17 +397,20 @@ def main():
     close_popup_box_for_prem_league_table_webpage(chrome_driver, logger)
 
 
+
     # Extract data (E)
     scraped_content          =   extract_data(chrome_driver, logger)
     
+
 
     # Transform data (T)
     prem_league_df           =   transform_data(scraped_content, match_date, logger)
 
 
+
     # Load data (L)
     file_name = "prem_league_table"
-    config["WRITE_FILES_TO_CLOUD"] = True
+    config["WRITE_FILES_TO_CLOUD"] = False
 
     if config["WRITE_FILES_TO_CLOUD"]:
         upload_df_to_s3(prem_league_df, match_date, file_name, config, logger)
@@ -447,7 +427,4 @@ def main():
 # Instantiate the classes in this script
 
 if __name__=="__main__":
-    # ---------------------------------------- TEST ----------------------------------------  
-    # Test the logging operation works as expected
-
     main()
