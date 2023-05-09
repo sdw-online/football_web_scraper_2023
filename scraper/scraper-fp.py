@@ -9,7 +9,7 @@ from datetime import datetime
 from functools import partial
 from dotenv import load_dotenv
 from selenium import webdriver
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
@@ -24,13 +24,14 @@ from selenium.webdriver.support import expected_conditions as EC
 # Set up functions for logging events 
 
 
-def create_logger(name, level=logging.DEBUG):
+def create_logger(name: str, level=logging.DEBUG) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(level)
     return logger
 
 
-def create_file_handler(local_filepath, level=logging.DEBUG, log_format='%(asctime)s | %(levelname)s | %(message)s'):
+
+def create_file_handler(local_filepath: str, level=logging.DEBUG, log_format='%(asctime)s | %(levelname)s | %(message)s') -> logging.FileHandler:
     file_handler = logging.FileHandler('logs/scraper/' + local_filepath + '.log', mode='w')
     file_handler.setLevel(level)
     formatter = logging.Formatter(log_format)
@@ -38,7 +39,8 @@ def create_file_handler(local_filepath, level=logging.DEBUG, log_format='%(ascti
     return file_handler
 
 
-def create_console_handler(colored=True, level=logging.DEBUG, detailed_logs=False):
+
+def create_console_handler(colored: bool=True, level=logging.DEBUG, detailed_logs=False) -> logging.StreamHandler:
     console_handler = logging.StreamHandler()
     
     if colored:
@@ -66,7 +68,8 @@ def create_console_handler(colored=True, level=logging.DEBUG, detailed_logs=Fals
     return console_handler
 
 
-def log_event(logger, level, message):
+
+def log_event(logger: logging.Logger, level: int, message: str) -> None:
     logger.log(level, message)
 
 
@@ -162,7 +165,7 @@ def close_popup_box_for_prem_league_table_webpage(chrome_driver: webdriver.Chrom
 # ================================================ DATA EXTRACTOR ================================================
 
 
-def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[Any]:
+def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[WebElement]:
     try:
         log_event(logger, logging.DEBUG, f'>>>>   Detecting HTML elements ...')
         return chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
@@ -171,12 +174,14 @@ def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logg
         return None
 
 
-def scrape_table_rows(table, logger: logging.Logger) -> Optional[Any]:
+
+def scrape_table_rows(table: Optional[WebElement], logger: logging.Logger) -> List[WebElement]:
     log_event(logger, logging.DEBUG, f'>>>>   Extracting content from HTML elements ...')
     return table.find_elements(By.XPATH, './/tr') if table else []
 
 
-def scrape_data_from_cells(table_row, logger: logging.Logger, row_counter: int):
+
+def scrape_data_from_cells(table_row: WebElement, logger: logging.Logger, row_counter: int) :
     cells       =   table_row.find_elements(By.TAG_NAME, 'td')
     cell_data   =   [cell.text for cell in cells]
     for i, data in enumerate(cell_data):
@@ -184,8 +189,10 @@ def scrape_data_from_cells(table_row, logger: logging.Logger, row_counter: int):
     return cell_data
 
 
-def scrape_data_from_rows(table_rows, logger: logging.Logger):
+
+def scrape_data_from_rows(table_rows: List[WebElement], logger: logging.Logger):
     return [scrape_data_from_cells(table_row, logger, i+1) for i, table_row in enumerate(table_rows) ]
+
 
 
 def extract_data(chrome_driver: webdriver.Chrome, logger: logging.Logger):
@@ -199,7 +206,7 @@ def extract_data(chrome_driver: webdriver.Chrome, logger: logging.Logger):
 # ================================================ DATA TRANSFORMER ================================================
 
 
-def create_dataframe(scraped_data, scraped_columns, match_date, logger: logging.Logger):
+def create_dataframe(scraped_data: List[List[str]], scraped_columns: List[str], match_date: str, logger: logging.Logger) -> Optional[pd.DataFrame]:
     try:
         log_event(logger, logging.DEBUG, '>>>> Now creating dataframe for Premier League table standings ....')
         table_df = pd.DataFrame(data=scraped_data, columns=scraped_columns)
@@ -210,6 +217,7 @@ def create_dataframe(scraped_data, scraped_columns, match_date, logger: logging.
         log_event(logger, logging.ERROR, e)
     
     return table_df
+
 
 
 def transform_data(scraped_content: List[List[str]], match_date: str, logger: logging.Logger) -> pd.DataFrame:
@@ -233,7 +241,7 @@ def transform_data(scraped_content: List[List[str]], match_date: str, logger: lo
 
 # A. UPLOAD TO CLOUD
 
-def create_s3_key(s3_folder, file_name, match_date, logger: logging.Logger):
+def create_s3_key(s3_folder: str, file_name: str, match_date: str, logger: logging.Logger) -> str:
     try:
         log_event(logger, logging.DEBUG, '>>>> Creating S3 key for Prem League table file ...')
         s3_key = f"{s3_folder}/{file_name}_{match_date}.csv"
@@ -244,7 +252,7 @@ def create_s3_key(s3_folder, file_name, match_date, logger: logging.Logger):
 
 
 
-def create_csv_buffer(logger: logging.Logger):
+def create_csv_buffer(logger: logging.Logger) -> io.StringIO:
     try:
         log_event(logger, logging.DEBUG, f">>> Creating in-memory buffer ...")
         return io.StringIO()
@@ -254,7 +262,7 @@ def create_csv_buffer(logger: logging.Logger):
 
 
 
-def write_df_to_csv(df, csv_buffer, logger: logging.Logger):
+def write_df_to_csv(df: pd.DataFrame, csv_buffer: io.StringIO, logger: logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Persisting dataframe to CSV file ...")
         df.to_csv(csv_buffer, index=False)
@@ -264,7 +272,7 @@ def write_df_to_csv(df, csv_buffer, logger: logging.Logger):
 
 
 
-def get_string_values_from_buffer(csv_buffer, logger: logging.Logger):
+def get_string_values_from_buffer(csv_buffer: io.StringIO, logger: logging.Logger) -> str:
     try:
         log_event(logger, logging.DEBUG, f">>> Retrieving data from CSV buffer & storing as string values ...")
         return csv_buffer.getvalue()
@@ -273,7 +281,8 @@ def get_string_values_from_buffer(csv_buffer, logger: logging.Logger):
         log_event(logger, logging.ERROR, e)
 
 
-def upload_string_to_s3(s3_client, s3_bucket, s3_key, string_values, logger: logging.Logger):
+
+def upload_string_to_s3(s3_client: Any, s3_bucket: str, s3_key: str, string_values: str, logger: logging.Logger) -> None :
     try:
         log_event(logger, logging.DEBUG, f">>> Preparing to upload file to S3 bucket ...")
         s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=string_values)
@@ -283,7 +292,7 @@ def upload_string_to_s3(s3_client, s3_bucket, s3_key, string_values, logger: log
 
 
 
-def upload_df_to_s3(df, match_date, file_name, config, logger):
+def upload_df_to_s3(df: pd.DataFrame, match_date: str, file_name: str, config: Dict[str, Any], logger: logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Composing final operations to begin upload to cloud ...")
         S3_KEY                              =   create_s3_key(config["S3_FOLDER"], file_name, match_date, logger)
@@ -305,7 +314,7 @@ def upload_df_to_s3(df, match_date, file_name, config, logger):
 
 # B. UPLOAD TO LOCAL MACHINE
 
-def create_local_file_path(target_path, file_name, match_date, logger: logging.Logger):
+def create_local_file_path(target_path: str, file_name: str, match_date: str, logger: logging.Logger) -> str:
     try:
         log_event(logger, logging.DEBUG, '>>>> Creating Prem League table filepath  ...')
         return f"{target_path}/{file_name}_{match_date}.csv"
@@ -314,7 +323,7 @@ def create_local_file_path(target_path, file_name, match_date, logger: logging.L
         log_event(logger, logging.ERROR, e)
 
 
-def write_df_to_local_file(df, file_path, logger: logging.Logger):
+def write_df_to_local_file(df: pd.DataFrame, file_path: str, logger: logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Converting data frame to CSV ...")
         df.to_csv(file_path, index=False)
@@ -324,7 +333,7 @@ def write_df_to_local_file(df, file_path, logger: logging.Logger):
 
 
 
-def upload_df_to_local_file(df, match_date, file_name, config, logger: logging.Logger):
+def upload_df_to_local_file(df: pd.DataFrame, match_date: str, file_name: str, config: Dict[str, Any], logger: logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Composing final operations to begin upload to local machine ...")
         file_path = create_local_file_path(config["LOCAL_TARGET_PATH"], file_name, match_date, logger)
