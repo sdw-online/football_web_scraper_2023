@@ -237,7 +237,11 @@ def transform_data(scraped_content: List[List[str]], match_date: str, logger: lo
 def create_s3_key(s3_folder, file_name, match_date, logger: logging.Logger):
     try:
         log_event(logger, logging.DEBUG, '>>>> Creating S3 key for Prem League table file ...')
-        return f"{s3_folder}/{file_name}_{match_date}.csv"
+        s3_key = f"{s3_folder}/{file_name}_{match_date}.csv"
+        print(f'S3 FOLDER: {s3_folder}')
+        print(f'S3 KEY: {s3_key} ')
+        return s3_key
+    
     except Exception as e:
         log_event(logger, logging.ERROR, e)
 
@@ -279,8 +283,11 @@ def get_string_values_from_buffer(csv_buffer, logger: logging.Logger):
 def upload_string_to_s3(s3_client, s3_bucket, s3_key, string_values, logger: logging.Logger):
     try:
         log_event(logger, logging.DEBUG, f">>> Preparing to upload file to S3 bucket ...")
+        print(f'S3 CLIENT: {s3_client} ')
+        print(f'S3 BUCKET: {s3_bucket} ')
+        print(f'STRING VALUES (1): {string_values} ')
         s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=string_values)
-        
+
     except Exception as e:
         log_event(logger, logging.ERROR, e)
 
@@ -289,14 +296,14 @@ def upload_string_to_s3(s3_client, s3_bucket, s3_key, string_values, logger: log
 def upload_df_to_s3(df, match_date, file_name, config, logger):
     try:
         log_event(logger, logging.DEBUG, f">>> Composing final operations to begin upload to cloud ...")
-        s3_key                              =   create_s3_key(config["S3_FOLDER"], file_name, match_date, logger)
+        S3_KEY                              =   create_s3_key(config["S3_FOLDER"], file_name, match_date, logger)
         CSV_BUFFER                          =   create_csv_buffer(logger)
         write_df_to_csv(df, CSV_BUFFER, logger)
         RAW_TABLE_ROWS_AS_STRING_VALUES     =   get_string_values_from_buffer(CSV_BUFFER, logger)
-        print(f'STRING VALUES: {RAW_TABLE_ROWS_AS_STRING_VALUES} ')
+        print(f'STRING VALUES (2): {RAW_TABLE_ROWS_AS_STRING_VALUES} ')
         
         try:
-            upload_string_to_s3(s3_client=config["S3_CLIENT"], s3_bucket=config["S3_BUCKET"], s3_key=s3_key, string_values=RAW_TABLE_ROWS_AS_STRING_VALUES, logger=logger)
+            upload_string_to_s3(s3_client=config["S3_CLIENT"], s3_bucket=config["S3_BUCKET"], s3_key=S3_KEY, string_values=RAW_TABLE_ROWS_AS_STRING_VALUES, logger=logger)
             log_event(logger, logging.DEBUG, f">>> Successfully written and loaded '{file_name}' file to cloud target location in S3 bucket... ")
         except Exception as e:
             log_event(logger, logging.ERROR, e)
@@ -391,6 +398,8 @@ def main():
 
     # Set up credentials for configuration 
 
+    load_dotenv()
+    
     aws_access_key          =   os.getenv("AWS_ACCESS_KEY")
     aws_secret_key          =   os.getenv("AWS_SECRET_KEY")
     aws_region_name         =   os.getenv("S3_REGION") 
@@ -398,7 +407,7 @@ def main():
     aws_s3_folder           =   os.getenv("S3_FOLDER") 
     local_target_path       =   os.getenv("LOCAL_TARGET_PATH") 
     config                  =   create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, WRITE_FILES_TO_CLOUD=False)
-
+    
 
 
 
