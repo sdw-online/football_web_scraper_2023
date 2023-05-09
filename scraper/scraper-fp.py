@@ -169,19 +169,20 @@ def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logg
     try:
         log_event(logger, logging.DEBUG, f'>>>>   Detecting HTML elements ...')
         return chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
+    
     except Exception as e:
         log_event(logger, logging.ERROR, e)
         return None
 
 
 
-def scrape_table_rows(table: Optional[WebElement], logger: logging.Logger) -> List[WebElement]:
+def scrape_table_rows(table: Optional[WebElement], logger: logging.Logger)  -> List[WebElement]:
     log_event(logger, logging.DEBUG, f'>>>>   Extracting content from HTML elements ...')
     return table.find_elements(By.XPATH, './/tr') if table else []
 
 
 
-def scrape_data_from_cells(table_row: WebElement, logger: logging.Logger, row_counter: int) :
+def scrape_data_from_cells(table_row: WebElement, logger: logging.Logger, row_counter: int) -> List[str]:
     cells       =   table_row.find_elements(By.TAG_NAME, 'td')
     cell_data   =   [cell.text for cell in cells]
     for i, data in enumerate(cell_data):
@@ -190,12 +191,12 @@ def scrape_data_from_cells(table_row: WebElement, logger: logging.Logger, row_co
 
 
 
-def scrape_data_from_rows(table_rows: List[WebElement], logger: logging.Logger):
+def scrape_data_from_rows(table_rows: List[WebElement], logger: logging.Logger) -> List[List[str]]:
     return [scrape_data_from_cells(table_row, logger, i+1) for i, table_row in enumerate(table_rows) ]
 
 
 
-def extract_data(chrome_driver: webdriver.Chrome, logger: logging.Logger):
+def extract_data(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[List[List[str]]]:
     prem_league_table   =   scrape_table_standings(chrome_driver, logger)
     table_rows          =   scrape_table_rows(prem_league_table, logger)
     return scrape_data_from_rows(table_rows, logger)
@@ -355,12 +356,7 @@ def upload_df_to_local_file(df: pd.DataFrame, match_date: str, file_name: str, c
 
 
 
-
-
-
-
-
-# Initialize the functions 
+# Wrap the scraping operations into one 'main' function 
 
 def main():
 
@@ -423,6 +419,7 @@ def main():
 
     if config["WRITE_FILES_TO_CLOUD"]:
         upload_df_to_s3(prem_league_df, match_date, file_name, config, logger)
+
     else:
         upload_df_to_local_file(prem_league_df, match_date, file_name, config, logger)
 
@@ -433,7 +430,7 @@ def main():
 
 
 
-# Instantiate the classes in this script
+# Instantiate the functions in this script
 
 if __name__=="__main__":
     main()
