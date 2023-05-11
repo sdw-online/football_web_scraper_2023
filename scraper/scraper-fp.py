@@ -31,8 +31,8 @@ def create_logger(name: str, level=logging.DEBUG) -> logging.Logger:
 
 
 
-def create_file_handler(local_filepath: str, level=logging.DEBUG, log_format='%(asctime)s | %(levelname)s | %(message)s') -> logging.FileHandler:
-    file_handler = logging.FileHandler('logs/scraper/' + local_filepath + '.log', mode='w')
+def create_file_handler(local_filepath: str, level=logging.DEBUG, log_format='%(asctime)s | %(levelname)s | %(message)s', log_folder:str='logs/scraper/') -> logging.FileHandler:
+    file_handler = logging.FileHandler(f'{log_folder}/{local_filepath}.log', mode='w')
     file_handler.setLevel(level)
     formatter = logging.Formatter(log_format)
     file_handler.setFormatter(formatter)
@@ -40,10 +40,10 @@ def create_file_handler(local_filepath: str, level=logging.DEBUG, log_format='%(
 
 
 
-def create_console_handler(colored: bool=True, level=logging.DEBUG, detailed_logs=False) -> logging.StreamHandler:
+def create_console_handler(coloured: bool=True, level=logging.DEBUG, detailed_logs=False, detailed_log_format: str = '%(asctime)s | %(levelname)s | %(message)s', simple_log_format: str = '%(message)s') -> logging.StreamHandler:
     console_handler = logging.StreamHandler()
     
-    if colored:
+    if coloured:
         console_formatter = coloredlogs.ColoredFormatter(fmt='%(message)s', level_styles=dict(
             debug=dict(color='white'),
             info=dict(color='green'),
@@ -57,12 +57,7 @@ def create_console_handler(colored: bool=True, level=logging.DEBUG, detailed_log
         )
         coloredlogs.install(level=level)
     else:
-        if detailed_logs:
-            detailed_log_format = '%(asctime)s | %(levelname)s | %(message)s'
-            console_formatter = logging.Formatter(detailed_log_format)
-        else:
-            simple_log_format = '%(message)s'
-            console_formatter = logging.Formatter(simple_log_format)
+        console_formatter = logging.Formatter(detailed_log_format) if detailed_logs else logging.Formatter(simple_log_format)
     
     console_handler.setFormatter(console_formatter)
     return console_handler
@@ -353,14 +348,9 @@ def upload_df_to_local_file(df: pd.DataFrame, match_date: str, file_name: str, c
 
 
 
+# Instantiate the functions in this script
 
-
-
-# Wrap the scraping operations into one 'main' function 
-
-def main():
-
-    
+if __name__=="__main__":
     match_date                      =   datetime.now().strftime('%Y-%b-%d') # for today's date
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
 
@@ -372,7 +362,7 @@ def main():
     log_level           =   logging.DEBUG
     logger              =   create_logger(logger_name, log_level)
     file_handler        =   create_file_handler(local_filepath, log_level)
-    console_handler     =   create_console_handler(colored=False, level=log_level, detailed_logs=False) 
+    console_handler     =   create_console_handler(coloured=False, level=log_level, detailed_logs=False) 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
@@ -427,10 +417,3 @@ def main():
 
     # Close driver when scraping is completed 
     chrome_driver.quit()
-
-
-
-# Instantiate the functions in this script
-
-if __name__=="__main__":
-    main()
