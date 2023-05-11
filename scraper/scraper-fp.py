@@ -24,9 +24,8 @@ from selenium.webdriver.support import expected_conditions as EC
 # Set up functions for logging events 
 
 
-def create_logger(name: str, 
-                  log_level: int
-                  ) -> logging.Logger:
+def create_logger(name:         str, 
+                  log_level:    int) -> logging.Logger:
     
     logger = logging.getLogger(name)
     logger.setLevel(log_level)
@@ -34,11 +33,10 @@ def create_logger(name: str,
 
 
 
-def create_file_handler(local_filepath: str, 
-                        log_level: int, 
-                        log_format: str,
-                        log_folder:str
-                        ) -> logging.FileHandler:
+def create_file_handler(local_filepath:     str, 
+                        log_level:          int, 
+                        log_format:         str,
+                        log_folder:         str)   -> logging.FileHandler:
     
     file_handler = logging.FileHandler(f'{log_folder}/{local_filepath}.log', mode='w')
     file_handler.setLevel(log_level)
@@ -48,12 +46,11 @@ def create_file_handler(local_filepath: str,
 
 
 
-def create_console_handler(coloured: bool, 
-                           log_level: int, 
-                           detailed_logs: bool, 
-                           detailed_log_format: str, 
-                           simple_log_format: str
-                           ) -> logging.StreamHandler:
+def create_console_handler(coloured:                bool, 
+                           log_level:               int, 
+                           detailed_logs:           bool, 
+                           detailed_log_format:     str, 
+                           simple_log_format:       str) -> logging.StreamHandler:
     
     console_handler = logging.StreamHandler()
     
@@ -68,7 +65,7 @@ def create_console_handler(coloured: bool,
             field_styles=dict(
             messages=dict(color='white')
         )
-        )
+    )
         coloredlogs.install(level=log_level)
     else:
         console_formatter = logging.Formatter(detailed_log_format) if detailed_logs else logging.Formatter(simple_log_format)
@@ -88,15 +85,14 @@ def log_event(logger: logging.Logger, level: int, message: str) -> None:
 
 # ================================================ CONFIG ================================================
 
-def create_config(aws_access_key: str, 
-                  aws_secret_key: str, 
-                  aws_region_name: str, 
-                  aws_s3_bucket: str, 
-                  aws_s3_folder: str, 
-                  local_target_path: str, 
-                  s3_client: Any, 
-                  WRITE_FILES_TO_CLOUD: bool
-                  ) -> dict:
+def create_config(aws_access_key:           str, 
+                  aws_secret_key:           str, 
+                  aws_region_name:          str, 
+                  aws_s3_bucket:            str, 
+                  aws_s3_folder:            str, 
+                  local_target_path:        str, 
+                  s3_client:                Any, 
+                  WRITE_FILES_TO_CLOUD:     bool) -> dict:
     
     config = {
         "AWS_ACCESS_KEY":           aws_access_key,
@@ -117,23 +113,39 @@ def create_config(aws_access_key: str,
 
 # ================================================ WEBPAGE LOADER ================================================
 
-def create_webdriver(options: webdriver.ChromeOptions, service: Service) -> webdriver.Chrome:
+def create_webdriver(options:   webdriver.ChromeOptions, 
+                    service:    Service) -> webdriver.Chrome:
+    
     return webdriver.Chrome(options=options, service=service)
     
 
-def load_webpage(chrome_driver: webdriver.Chrome, url: str, logger: logging.Logger) -> webdriver.Chrome:
+
+def load_webpage(chrome_driver:     webdriver.Chrome, 
+                 url:               str, 
+                 logger:            logging.Logger) -> webdriver.Chrome:
+    
     log_event(logger, logging.DEBUG, ">>> Loading webpage using Selenium ...")
     chrome_driver.get(url)
     sleep(3)
     return chrome_driver
 
 
-def check_page_title(chrome_driver: webdriver.Chrome, expected_title: str, logger: logging.Logger) -> None:
+
+def check_page_title(chrome_driver:     webdriver.Chrome, 
+                     expected_title:    str, 
+                     logger:            logging.Logger) -> None:
+    
     assert expected_title in chrome_driver.title, f"ERROR: Unable to load site for {expected_title} ... "
     log_event(logger, logging.DEBUG, ">>> Webpage successfully loaded ...")
 
 
-def load_league_table(url: str, logger: logging.Logger, options: webdriver.ChromeOptions, service: Service, title_check: str) -> webdriver.Chrome:
+
+def load_league_table(url:              str, 
+                      logger:           logging.Logger, 
+                      options:          webdriver.ChromeOptions, 
+                      service:          Service, 
+                      title_check:      str) -> webdriver.Chrome:
+    
     chrome_driver = create_webdriver(options, service)
     chrome_driver = load_webpage(chrome_driver, url, logger)
     check_page_title(chrome_driver, title_check, logger)
@@ -145,18 +157,25 @@ def load_league_table(url: str, logger: logging.Logger, options: webdriver.Chrom
 
 # ================================================ POPUP HANDLER ================================================
 
-def find_popup_element(chrome_driver: webdriver.Chrome, timeout: int) -> WebElement:
+def find_popup_element(chrome_driver:   webdriver.Chrome, 
+                       timeout:         int) -> WebElement:
     wait = WebDriverWait(chrome_driver, timeout)
 
     return wait.until(EC.presence_of_element_located((By.XPATH, '/html/body/div[8]/div[2]/div[1]/div[1]/button/i')))
 
 
-def close_popup(close_popup_box: WebElement, logger: logging.Logger) -> None:
+
+def close_popup(close_popup_box:    WebElement, 
+                logger:             logging.Logger) -> None:
     close_popup_box.click()
     log_event(logger, logging.DEBUG, f'>>>>   Closing cookie pop-up window ...')
 
 
-def close_popup_box_for_table_standings_webpage(chrome_driver: webdriver.Chrome, logger: logging.Logger, timeout: int) -> None:
+
+def close_popup_box_for_table_standings_webpage(chrome_driver:  webdriver.Chrome, 
+                                                logger:         logging.Logger, 
+                                                timeout:        int) -> None:
+    
     try:
         close_popup_box = find_popup_element(chrome_driver, timeout)
         close_popup(close_popup_box, logger)
@@ -170,7 +189,9 @@ def close_popup_box_for_table_standings_webpage(chrome_driver: webdriver.Chrome,
 # ================================================ DATA EXTRACTOR ================================================
 
 
-def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[WebElement]:
+def scrape_table_standings(chrome_driver:       webdriver.Chrome, 
+                           logger:              logging.Logger) -> Optional[WebElement]:
+    
     try:
         log_event(logger, logging.DEBUG, f'>>>>   Detecting HTML elements ...')
         return chrome_driver.find_element(By.CLASS_NAME, 'leaguetable')
@@ -181,13 +202,18 @@ def scrape_table_standings(chrome_driver: webdriver.Chrome, logger: logging.Logg
 
 
 
-def scrape_table_rows(table: Optional[WebElement], logger: logging.Logger)  -> List[WebElement]:
+def scrape_table_rows(table:    Optional[WebElement], 
+                      logger:   logging.Logger)  -> List[WebElement]:
+    
     log_event(logger, logging.DEBUG, f'>>>>   Extracting content from HTML elements ...')
     return table.find_elements(By.XPATH, './/tr') if table else []
 
 
 
-def scrape_data_from_cells(table_row: WebElement, logger: logging.Logger, row_counter: int) -> List[str]:
+def scrape_data_from_cells(table_row:       WebElement, 
+                           logger:          logging.Logger, 
+                           row_counter:     int) -> List[str]:
+    
     cells       =   table_row.find_elements(By.TAG_NAME, 'td')
     cell_data   =   [cell.text for cell in cells]
     for i, data in enumerate(cell_data):
@@ -196,12 +222,16 @@ def scrape_data_from_cells(table_row: WebElement, logger: logging.Logger, row_co
 
 
 
-def scrape_data_from_rows(table_rows: List[WebElement], logger: logging.Logger) -> List[List[str]]:
+def scrape_data_from_rows(table_rows:   List[WebElement], 
+                          logger:       logging.Logger) -> List[List[str]]:
+    
     return [scrape_data_from_cells(table_row, logger, i+1) for i, table_row in enumerate(table_rows) ]
 
 
 
-def extract_data(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Optional[List[List[str]]]:
+def extract_data(chrome_driver:         webdriver.Chrome, 
+                 logger:                logging.Logger) -> Optional[List[List[str]]]:
+    
     prem_league_table   =   scrape_table_standings(chrome_driver, logger)
     table_rows          =   scrape_table_rows(prem_league_table, logger)
     return scrape_data_from_rows(table_rows, logger)
@@ -212,7 +242,10 @@ def extract_data(chrome_driver: webdriver.Chrome, logger: logging.Logger) -> Opt
 # ================================================ DATA TRANSFORMER ================================================
 
 
-def create_dataframe(scraped_data: List[List[str]], scraped_columns: List[str], match_date: str, logger: logging.Logger) -> Optional[pd.DataFrame]:
+def create_dataframe(scraped_data:      List[List[str]], 
+                     scraped_columns:   List[str], 
+                     match_date:        str, 
+                     logger:            logging.Logger) -> Optional[pd.DataFrame]:
     try:
         log_event(logger, logging.DEBUG, '>>>> Now creating dataframe for Premier League table standings ....')
         table_df = pd.DataFrame(data=scraped_data, columns=scraped_columns)
@@ -226,7 +259,9 @@ def create_dataframe(scraped_data: List[List[str]], scraped_columns: List[str], 
 
 
 
-def transform_data(scraped_content: List[List[str]], match_date: str, logger: logging.Logger) -> pd.DataFrame:
+def transform_data(scraped_content:     List[List[str]], 
+                   match_date:          str, 
+                   logger:              logging.Logger) -> pd.DataFrame:
     try:
         log_event(logger, logging.DEBUG, '>>>> Now transforming scraped content for Premier League table standings ....')
         scraped_data = scraped_content[1:]
@@ -247,7 +282,10 @@ def transform_data(scraped_content: List[List[str]], match_date: str, logger: lo
 
 # A. UPLOAD TO CLOUD
 
-def create_s3_key(s3_folder: str, file_name: str, match_date: str, logger: logging.Logger) -> str:
+def create_s3_key(s3_folder:    str, 
+                  file_name:    str, 
+                  match_date:   str, 
+                  logger:       logging.Logger) -> str:
     try:
         log_event(logger, logging.DEBUG, '>>>> Creating S3 key for Prem League table file ...')
         s3_key = f"{s3_folder}/{file_name}_{match_date}.csv"
@@ -268,7 +306,9 @@ def create_csv_buffer(logger: logging.Logger) -> io.StringIO:
 
 
 
-def write_df_to_csv(df: pd.DataFrame, csv_buffer: io.StringIO, logger: logging.Logger) -> None:
+def write_df_to_csv(df:             pd.DataFrame, 
+                    csv_buffer:     io.StringIO, 
+                    logger:         logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Persisting dataframe to CSV file ...")
         df.to_csv(csv_buffer, index=False)
@@ -278,7 +318,8 @@ def write_df_to_csv(df: pd.DataFrame, csv_buffer: io.StringIO, logger: logging.L
 
 
 
-def get_string_values_from_buffer(csv_buffer: io.StringIO, logger: logging.Logger) -> str:
+def get_string_values_from_buffer(csv_buffer:   io.StringIO, 
+                                  logger:       logging.Logger) -> str:
     try:
         log_event(logger, logging.DEBUG, f">>> Retrieving data from CSV buffer & storing as string values ...")
         return csv_buffer.getvalue()
@@ -288,7 +329,11 @@ def get_string_values_from_buffer(csv_buffer: io.StringIO, logger: logging.Logge
 
 
 
-def upload_string_to_s3(s3_client: Any, s3_bucket: str, s3_key: str, string_values: str, logger: logging.Logger) -> None :
+def upload_string_to_s3(s3_client:          Any, 
+                        s3_bucket:          str, 
+                        s3_key:             str, 
+                        string_values:      str, 
+                        logger:             logging.Logger) -> None :
     try:
         log_event(logger, logging.DEBUG, f">>> Preparing to upload file to S3 bucket ...")
         s3_client.put_object(Bucket=s3_bucket, Key=s3_key, Body=string_values)
@@ -298,7 +343,11 @@ def upload_string_to_s3(s3_client: Any, s3_bucket: str, s3_key: str, string_valu
 
 
 
-def upload_df_to_s3(df: pd.DataFrame, match_date: str, file_name: str, config: Dict[str, Any], logger: logging.Logger) -> None:
+def upload_df_to_s3(df:             pd.DataFrame, 
+                    match_date:     str, 
+                    file_name:      str, 
+                    config:         Dict[str, Any], 
+                    logger:         logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Composing final operations to begin upload to cloud ...")
         S3_KEY                              =   create_s3_key(config["S3_FOLDER"], file_name, match_date, logger)
@@ -320,7 +369,10 @@ def upload_df_to_s3(df: pd.DataFrame, match_date: str, file_name: str, config: D
 
 # B. UPLOAD TO LOCAL MACHINE
 
-def create_local_file_path(target_path: str, file_name: str, match_date: str, logger: logging.Logger) -> str:
+def create_local_file_path(target_path:     str, 
+                           file_name:       str, 
+                           match_date:      str, 
+                           logger:          logging.Logger) -> str:
     try:
         log_event(logger, logging.DEBUG, '>>>> Creating Prem League table filepath  ...')
         return f"{target_path}/{file_name}_{match_date}.csv"
@@ -329,7 +381,9 @@ def create_local_file_path(target_path: str, file_name: str, match_date: str, lo
         log_event(logger, logging.ERROR, e)
 
 
-def write_df_to_local_file(df: pd.DataFrame, file_path: str, logger: logging.Logger) -> None:
+def write_df_to_local_file(df:          pd.DataFrame, 
+                           file_path:   str, 
+                           logger:      logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Converting data frame to CSV ...")
         df.to_csv(file_path, index=False)
@@ -339,7 +393,11 @@ def write_df_to_local_file(df: pd.DataFrame, file_path: str, logger: logging.Log
 
 
 
-def upload_df_to_local_file(df: pd.DataFrame, match_date: str, file_name: str, config: Dict[str, Any], logger: logging.Logger) -> None:
+def upload_df_to_local_file(df:                 pd.DataFrame, 
+                            match_date:         str, 
+                            file_name:          str, 
+                            config:             Dict[str, Any], 
+                            logger:             logging.Logger) -> None:
     try:
         log_event(logger, logging.DEBUG, f">>> Composing final operations to begin upload to local machine ...")
         file_path = create_local_file_path(config["LOCAL_TARGET_PATH"], file_name, match_date, logger)
@@ -379,6 +437,7 @@ if __name__=="__main__":
     webdriver_timeout               =   5
     WRITE_FILES_TO_CLOUD            =   False
     s3_client                       =   "s3"
+
     options                         =   webdriver.ChromeOptions()
     service                         =   Service(executable_path=ChromeDriverManager().install())
     title_check                     =   "Premier League"
@@ -433,9 +492,8 @@ if __name__=="__main__":
 
     # Load data (L)
     file_name = "prem_league_table"
-    config["WRITE_FILES_TO_CLOUD"] = False
 
-    if config["WRITE_FILES_TO_CLOUD"]:
+    if WRITE_FILES_TO_CLOUD:
         upload_df_to_s3(prem_league_df, match_date, file_name, config, logger)
 
     else:
