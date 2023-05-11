@@ -465,7 +465,15 @@ if __name__=="__main__":
     aws_s3_bucket           =   os.getenv("S3_BUCKET") 
     aws_s3_folder           =   os.getenv("S3_FOLDER") 
     local_target_path       =   os.getenv("LOCAL_TARGET_PATH") 
-    config                  =   create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, s3_client, WRITE_FILES_TO_CLOUD=False)
+    
+    config                  =   create_config(aws_access_key, 
+                                              aws_secret_key, 
+                                              aws_region_name, 
+                                              aws_s3_bucket, 
+                                              aws_s3_folder, 
+                                              local_target_path, 
+                                              s3_client, 
+                                              WRITE_FILES_TO_CLOUD=WRITE_FILES_TO_CLOUD)
 
 
 
