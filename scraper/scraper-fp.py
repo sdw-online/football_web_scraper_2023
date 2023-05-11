@@ -111,14 +111,7 @@ def create_config(aws_access_key:           str,
 
 
 
-# ================================================ WEBPAGE LOADER ================================================
-
-def create_webdriver(options:   webdriver.ChromeOptions, 
-                    service:    Service) -> webdriver.Chrome:
-    
-    return webdriver.Chrome(options=options, service=service)
-    
-
+# ================================================ WEBPAGE LOADER ================================================   
 
 def load_webpage(chrome_driver:     webdriver.Chrome, 
                  url:               str, 
@@ -140,13 +133,11 @@ def check_page_title(chrome_driver:     webdriver.Chrome,
 
 
 
-def load_league_table(url:              str, 
+def load_league_table(chrome_driver:    webdriver.Chrome,
+                      url:              str, 
                       logger:           logging.Logger, 
-                      options:          webdriver.ChromeOptions, 
-                      service:          Service, 
                       title_check:      str) -> webdriver.Chrome:
     
-    chrome_driver = create_webdriver(options, service)
     chrome_driver = load_webpage(chrome_driver, url, logger)
     check_page_title(chrome_driver, title_check, logger)
     
@@ -440,6 +431,8 @@ if __name__=="__main__":
 
     options                         =   webdriver.ChromeOptions()
     service                         =   Service(executable_path=ChromeDriverManager().install())
+    web_driver                      =   webdriver.Chrome(options=options, service=service)
+    
     title_check                     =   "Premier League"
 
 
@@ -479,7 +472,7 @@ if __name__=="__main__":
 
 
     # Set up Selenium Chrome driver and configuration settings  
-    chrome_driver = load_league_table(url=football_url, logger=logger, options=options, service=service, title_check=title_check)
+    chrome_driver = load_league_table(chrome_driver=web_driver, url=football_url, logger=logger, title_check=title_check)
 
 
 
