@@ -24,26 +24,40 @@ from selenium.webdriver.support import expected_conditions as EC
 # Set up functions for logging events 
 
 
-def create_logger(name: str, level=logging.DEBUG) -> logging.Logger:
+def create_logger(name: str, 
+                  log_level: int
+                  ) -> logging.Logger:
+    
     logger = logging.getLogger(name)
-    logger.setLevel(level)
+    logger.setLevel(log_level)
     return logger
 
 
 
-def create_file_handler(local_filepath: str, level=logging.DEBUG, log_format='%(asctime)s | %(levelname)s | %(message)s') -> logging.FileHandler:
-    file_handler = logging.FileHandler('logs/scraper/' + local_filepath + '.log', mode='w')
-    file_handler.setLevel(level)
+def create_file_handler(local_filepath: str, 
+                        log_level: int, 
+                        log_format: str,
+                        log_folder:str
+                        ) -> logging.FileHandler:
+    
+    file_handler = logging.FileHandler(f'{log_folder}/{local_filepath}.log', mode='w')
+    file_handler.setLevel(log_level)
     formatter = logging.Formatter(log_format)
     file_handler.setFormatter(formatter)
     return file_handler
 
 
 
-def create_console_handler(colored: bool=True, level=logging.DEBUG, detailed_logs=False) -> logging.StreamHandler:
+def create_console_handler(coloured: bool, 
+                           log_level: int, 
+                           detailed_logs: bool, 
+                           detailed_log_format: str, 
+                           simple_log_format: str
+                           ) -> logging.StreamHandler:
+    
     console_handler = logging.StreamHandler()
     
-    if colored:
+    if coloured:
         console_formatter = coloredlogs.ColoredFormatter(fmt='%(message)s', level_styles=dict(
             debug=dict(color='white'),
             info=dict(color='green'),
@@ -55,14 +69,9 @@ def create_console_handler(colored: bool=True, level=logging.DEBUG, detailed_log
             messages=dict(color='white')
         )
         )
-        coloredlogs.install(level=level)
+        coloredlogs.install(level=log_level)
     else:
-        if detailed_logs:
-            detailed_log_format = '%(asctime)s | %(levelname)s | %(message)s'
-            console_formatter = logging.Formatter(detailed_log_format)
-        else:
-            simple_log_format = '%(message)s'
-            console_formatter = logging.Formatter(simple_log_format)
+        console_formatter = logging.Formatter(detailed_log_format) if detailed_logs else logging.Formatter(simple_log_format)
     
     console_handler.setFormatter(console_formatter)
     return console_handler
@@ -79,14 +88,15 @@ def log_event(logger: logging.Logger, level: int, message: str) -> None:
 
 # ================================================ CONFIG ================================================
 
-def create_config(aws_access_key: str, aws_secret_key: str, aws_region_name: str, aws_s3_bucket: str, aws_s3_folder: str, local_target_path: str, WRITE_FILES_TO_CLOUD: bool = False, s3_client: Optional[Any]=None) -> dict:
-    if s3_client is None:
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id       =   aws_access_key,
-            aws_secret_access_key   =   aws_secret_key,
-            region_name             =   aws_region_name
-        )
+def create_config(aws_access_key: str, 
+                  aws_secret_key: str, 
+                  aws_region_name: str, 
+                  aws_s3_bucket: str, 
+                  aws_s3_folder: str, 
+                  local_target_path: str, 
+                  s3_client: Any, 
+                  WRITE_FILES_TO_CLOUD: bool
+                  ) -> dict:
     
     config = {
         "AWS_ACCESS_KEY":           aws_access_key,
@@ -107,12 +117,7 @@ def create_config(aws_access_key: str, aws_secret_key: str, aws_region_name: str
 
 # ================================================ WEBPAGE LOADER ================================================
 
-def create_webdriver(options=None, service=None) -> webdriver.Chrome:
-    if options is None:
-        options = webdriver.ChromeOptions()
-    if service is None:
-        service = Service(executable_path=ChromeDriverManager().install())
-    
+def create_webdriver(options: webdriver.ChromeOptions, service: Service) -> webdriver.Chrome:
     return webdriver.Chrome(options=options, service=service)
     
 
@@ -128,10 +133,10 @@ def check_page_title(chrome_driver: webdriver.Chrome, expected_title: str, logge
     log_event(logger, logging.DEBUG, ">>> Webpage successfully loaded ...")
 
 
-def load_prem_league_table_webpage(url: str, logger: logging.Logger, options=None, service=None) -> webdriver.Chrome:
+def load_league_table(url: str, logger: logging.Logger, options: webdriver.ChromeOptions, service: Service, title_check: str) -> webdriver.Chrome:
     chrome_driver = create_webdriver(options, service)
     chrome_driver = load_webpage(chrome_driver, url, logger)
-    check_page_title(chrome_driver, "Premier League", logger)
+    check_page_title(chrome_driver, title_check, logger)
     
     return chrome_driver
 
@@ -151,7 +156,7 @@ def close_popup(close_popup_box: WebElement, logger: logging.Logger) -> None:
     log_event(logger, logging.DEBUG, f'>>>>   Closing cookie pop-up window ...')
 
 
-def close_popup_box_for_prem_league_table_webpage(chrome_driver: webdriver.Chrome, logger: logging.Logger, timeout: int = 5) -> None:
+def close_popup_box_for_table_standings_webpage(chrome_driver: webdriver.Chrome, logger: logging.Logger, timeout: int) -> None:
     try:
         close_popup_box = find_popup_element(chrome_driver, timeout)
         close_popup(close_popup_box, logger)
@@ -353,26 +358,39 @@ def upload_df_to_local_file(df: pd.DataFrame, match_date: str, file_name: str, c
 
 
 
+# Instantiate the functions in this script
 
+if __name__=="__main__":
 
+    # Set up constants to read into functions 
 
-# Wrap the scraping operations into one 'main' function 
-
-def main():
-
-    
     match_date                      =   datetime.now().strftime('%Y-%b-%d') # for today's date
     football_url                    =   f'https://www.twtd.co.uk/league-tables/competition:premier-league/daterange/fromdate:2022-Jul-01/todate:{match_date}/type:home-and-away/'
+
+    logger_name                     =   "football_scraper_fp"
+    local_filepath                  =   'main_scraper'
+    log_format                      =   '%(asctime)s | %(levelname)s | %(message)s'
+    log_folder                      =   'logs/scraper/'
+
+    coloured                        =   False
+    detailed_logs                   =   False
+    detailed_log_format             =   '%(asctime)s | %(levelname)s | %(message)s'
+    simple_log_format               =   '%(message)s'
+    webdriver_timeout               =   5
+    WRITE_FILES_TO_CLOUD            =   False
+    s3_client                       =   "s3"
+    options                         =   webdriver.ChromeOptions()
+    service                         =   Service(executable_path=ChromeDriverManager().install())
+    title_check                     =   "Premier League"
 
 
 
     # Set up logging to file and console
-    logger_name         =   "football_scraper_fp"
-    local_filepath      =   'main_scraper'
+
     log_level           =   logging.DEBUG
     logger              =   create_logger(logger_name, log_level)
-    file_handler        =   create_file_handler(local_filepath, log_level)
-    console_handler     =   create_console_handler(colored=False, level=log_level, detailed_logs=False) 
+    file_handler        =   create_file_handler(local_filepath, log_level, log_format, log_folder)
+    console_handler     =   create_console_handler(coloured, log_level, detailed_logs, detailed_log_format, simple_log_format) 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
 
@@ -388,18 +406,18 @@ def main():
     aws_s3_bucket           =   os.getenv("S3_BUCKET") 
     aws_s3_folder           =   os.getenv("S3_FOLDER") 
     local_target_path       =   os.getenv("LOCAL_TARGET_PATH") 
-    config                  =   create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, WRITE_FILES_TO_CLOUD=False)
+    config                  =   create_config(aws_access_key, aws_secret_key, aws_region_name, aws_s3_bucket, aws_s3_folder, local_target_path, s3_client, WRITE_FILES_TO_CLOUD=False)
 
 
 
 
     # Set up Selenium Chrome driver and configuration settings  
-    chrome_driver = load_prem_league_table_webpage(football_url, logger)
+    chrome_driver = load_league_table(url=football_url, logger=logger, options=options, service=service, title_check=title_check)
 
 
 
     # Close popup box on webpage
-    close_popup_box_for_prem_league_table_webpage(chrome_driver, logger)
+    close_popup_box_for_table_standings_webpage(chrome_driver, timeout=webdriver_timeout, logger=logger)
 
 
 
@@ -427,10 +445,3 @@ def main():
 
     # Close driver when scraping is completed 
     chrome_driver.quit()
-
-
-
-# Instantiate the functions in this script
-
-if __name__=="__main__":
-    main()
